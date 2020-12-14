@@ -42,11 +42,13 @@
 ;; maybe improve performance on windows
 (setq w32-pipe-read-delay 0)
 
-(menu-bar-mode -1)
-(tool-bar-mode -1)
-(scroll-bar-mode -1)
+(unless my/is-termux
+    (tool-bar-mode -1)
+    (scroll-bar-mode -1))
+
 (global-hl-line-mode 1)
 (winner-mode t)
+(menu-bar-mode -1)
 
 ;; Don't Lock Files
 (setq-default create-lockfiles nil)
@@ -107,23 +109,23 @@ The original function deletes trailing whitespace of the current line."
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 
-;; set a default font
-(set-face-attribute 'default nil
-                    :family "Cascadia Code"
-		    ;; :family "IBM Plex Mono Medium"
-                    :height 90
-                    :weight 'normal
-                    :width 'normal)
+(unless my/is-termux
+    ;; set a default font
+    (set-face-attribute 'default nil
+                        :family "Cascadia Code"
+                ;; :family "IBM Plex Mono Medium"
+                        :height 90
+                        :weight 'normal
+                        :width 'normal)
 
-;; ;; specify font for all unicode characters
-(set-fontset-font t
-                  'unicode
-                  (font-spec :family "Cascadia Code"
-                             :width 'normal
-                             :height 100
-                             :weight 'normal) nil 'prepend)
-;; For testing purposes: →„Σ"←
-
+    ;; specify font for all unicode characters
+    (set-fontset-font t
+                      'unicode
+                      (font-spec :family "Cascadia Code"
+                                 :width 'normal
+                                 :height 100
+                                 :weight 'normal) nil 'prepend)
+    )
 
 ;; Don't create backups
 (setq make-backup-files nil)
