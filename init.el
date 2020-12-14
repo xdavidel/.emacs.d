@@ -313,6 +313,16 @@ The original function deletes trailing whitespace of the current line."
   ('normal "gcc" 'evilnc-comment-or-uncomment-lines)
   ('visual "gc" 'evilnc-comment-or-uncomment-lines))
 
+(use-package evil-terminal-cursor-changer
+  :init
+  (evil-terminal-cursor-changer-activate)
+  (setq evil-motion-state-cursor 'box)  ; █
+  (setq evil-visual-state-cursor 'box)  ; █
+  (setq evil-normal-state-cursor 'box)  ; █
+  (setq evil-insert-state-cursor 'bar)  ; ⎸
+  (setq evil-emacs-state-cursor  'hbar) ; _
+  )
+
 ;; Sensible Evil Splits
 (setq evil-vsplit-window-right t)
 
@@ -790,7 +800,8 @@ Version 2017-04-19"
   (doom-modeline-mode)
   ;; Don’t compact font caches during GC.
   (setq inhibit-compacting-font-caches t)
-  (setq doom-modeline-icon t))
+  (unless my/is-termux
+    (setq doom-modeline-icon t)))
 
 (use-package lsp-mode
   :defer t
