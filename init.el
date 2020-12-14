@@ -800,7 +800,7 @@ Version 2017-04-19"
   (doom-modeline-mode)
   ;; Don’t compact font caches during GC.
   (setq inhibit-compacting-font-caches t)
-  (unless my/is-termux
+  (when (display-graphic-p)
     (setq doom-modeline-icon t)))
 
 (use-package lsp-mode
