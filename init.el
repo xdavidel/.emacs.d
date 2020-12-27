@@ -691,10 +691,6 @@ are defining or executing a macro."
   :config
   (advice-add 'magit-set-header-line-format :override #'ignore))
 
-;; Use magit evil mode
-(use-package evil-magit
-  :after evil magit)
-
 ;; Show TODOs in magit
 (use-package magit-todos
   :after magit
