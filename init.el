@@ -791,11 +791,10 @@ are defining or executing a macro."
 
 ;; Org Mode
 (use-package org
-  :straight (:type built-in)
+  ;; :straight (:type built-in)
   :hook ((ediff-prepare-buffer . outline-show-all)
          ((org-capture-mode org-src-mode) . my/discard-history))
   :custom
-  ;; (org-ellipsis " ▾")
   (org-ellipsis " ▼")
   (org-startup-with-inline-images nil)
   (org-log-done 'time)
@@ -817,6 +816,13 @@ are defining or executing a macro."
          "CANCELLED(c)" )))
   (org-hide-leading-stars t)
   :config
+  (when (not (version<= org-version "9.1.9"))
+    (use-package org-tempo
+      :straight nil))
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python"))
+  (add-to-list 'org-structure-template-alist '("cc" . "src c++"))
   (defun my/discard-history ()
     "Discard undo history of org src and capture blocks."
     (setq buffer-undo-list nil)
@@ -866,11 +872,6 @@ are defining or executing a macro."
   :hook (org-mode . org-make-toc-mode))
 
 ;; Structure Templates
-(require 'org-tempo)
-(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-(add-to-list 'org-structure-template-alist '("py" . "src python"))
-(add-to-list 'org-structure-template-alist '("cc" . "src c++"))
 ;; ------------------------------------
 
 
@@ -908,9 +909,6 @@ are defining or executing a macro."
             "--pch-storage=memory"
             "--suggest-missing-includes")))
   :hook ((c-mode-common . my/cc-mode-setup)))
-
-;; A mode for editing cmake files.
-(use-package cmake-mode)
 
 ;; Format C code with Clang Format
 (use-package clang-format
@@ -951,9 +949,6 @@ are defining or executing a macro."
   (set-face-attribute 'racket-debug-result-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
   (set-face-attribute 'racket-debug-locals-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
   (set-face-attribute 'racket-selfeval-face nil :foreground (face-attribute 'default :foreground)))
-
-;; Cmake mode
-(use-package cmake-mode)
 
 ;; Lisp and ELisp mode
 (use-package elisp-mode
