@@ -29,6 +29,11 @@
 ;; Disable bells
 (setq ring-bell-function 'ignore)
 
+;; Set transparent background
+(defvar my/frame-transparency '(95 . 80))
+(set-frame-parameter (selected-frame) 'alpha my/frame-transparency)
+(add-to-list 'default-frame-alist `(alpha . ,my/frame-transparency))
+
 ;; Answering just 'y' or 'n' will do
 (defalias 'yes-or-no-p 'y-or-n-p)
 
@@ -40,6 +45,9 @@
 
 ;; Create a margin for off screen
 (setq scroll-margin 5)
+
+;; Auto refresh changed buffers
+(global-auto-revert-mode t)
 
 ;; Save history between sessions
 (use-package savehist
@@ -167,6 +175,9 @@
   (when (display-graphic-p)
     (setq doom-modeline-icon t)))
 
+;; Set color backgrounds to color names
+(use-package rainbow-mode
+  :init (rainbow-mode))
 ;; ------------------------------------
 
 ;; Functions
@@ -259,6 +270,10 @@ are defining or executing a macro."
   (when (and (not (my/font-installed-p "all-the-icons"))
              (window-system))
     (all-the-icons-install-fonts t)))
+
+;; Icons for dired
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
 ;; ------------------------------------
 
 ;; Distinguish buffers that are for utilities
@@ -293,8 +308,18 @@ are defining or executing a macro."
 (setq user-full-name "David Delarosa"
       user-mail-address "xdavidel@gmail.com")
 
-;; Don't create backups
-(setq make-backup-files nil)
+;; Move backups to emacs folder
+(setq backup-directory-alist `(("." . ,(expand-file-name "tmp/backups/" user-emacs-directory))))
+
+;; Auto Save Files
+;; create directory for auto-save-mode
+(make-directory (expand-file-name "tmp/auto-saves/" user-emacs-directory) t)
+
+(setq auto-save-list-file-prefix (expand-file-name "tmp/auto-saves/sessions/" user-emacs-directory)
+      auto-save-file-name-transforms `((".*" ,(expand-file-name "tmp/auto-saves/" user-emacs-directory) t)))
+
+;; No Lock Files
+(setq create-lockfiles nil)
 
 ;; Benchmark
 (use-package benchmark-init
@@ -724,16 +749,42 @@ are defining or executing a macro."
   (setq show-paren-style 'mixed))
 
 ;; ;; LSP client
-(use-package eglot)
-(add-to-list 'eglot-server-programs
-             `(python-mode . ("pyls" "-v" "--tcp" "--host"
-                              "localhost" "--port" :autoport)))
-(add-hook 'python-mode 'eglot-ensure)
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :custom
+  (lsp-keymap-prefix "C-c l")
+  (lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  (lsp-headerline-breadcrumb-mode))
 
+;; Python support
+(use-package lsp-python-ms
+  :custom
+  (lsp-python-ms-auto-install-server t)
+  :hook (python-mode . lsp-deferred))
 
-;; Set color backgrounds to color names
-(use-package rainbow-mode
-  :init (rainbow-mode))
+;; Ui for lsp
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode))
+
+;; Display references of a symbol, or diagnostic
+(use-package lsp-treemacs
+  :after lsp)
+
+;; Search symbols with ivy
+(use-package lsp-ivy)
+
+;; Debugger
+(use-package dap-mode
+  ;; Uncomment the config below if you want all UI panes to be hidden by default!
+  ;; :custom
+  ;; (lsp-enable-dap-auto-configure nil)
+  ;; :config
+  ;; (dap-ui-mode 1)
+  :config
+  ;; Set up Node debugging
+  (require 'dap-node)
+  (dap-node-setup) ;; Automatically installs Node debug adapter if needed
+  )
 
 ;; Org Stuff
 ;; ------------------------------------
@@ -741,8 +792,7 @@ are defining or executing a macro."
 ;; Org Mode
 (use-package org
   :straight (:type built-in)
-  :hook ((after-save . my/org-babel-tangle-dont-ask)
-         (ediff-prepare-buffer . outline-show-all)
+  :hook ((ediff-prepare-buffer . outline-show-all)
          ((org-capture-mode org-src-mode) . my/discard-history))
   :custom
   ;; (org-ellipsis " ▾")
@@ -792,12 +842,13 @@ are defining or executing a macro."
 
   (defun my/org-babel-tangle-current-buffer-async ()
     "Tangle current buffer asynchronously."
-    (my/org-babel-tangle-async (buffer-file-name))))
+    (my/org-babel-tangle-async (buffer-file-name)))
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my/org-babel-tangle-dont-ask))))
 
 (use-package org-bullets
   :after org
   :config
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+  (add-hook 'org-mode-hook 'org-bullets-mode))
 
 ;; Org Margins
 (use-package visual-fill-column
@@ -814,6 +865,12 @@ are defining or executing a macro."
 (use-package org-make-toc
   :hook (org-mode . org-make-toc-mode))
 
+;; Structure Templates
+(require 'org-tempo)
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+(add-to-list 'org-structure-template-alist '("py" . "src python"))
+(add-to-list 'org-structure-template-alist '("cc" . "src c++"))
 ;; ------------------------------------
 
 
@@ -833,6 +890,7 @@ are defining or executing a macro."
 
 (use-package cc-mode
   :straight nil
+  :defines (lsp-clients-clangd-args)
   :config (defun my/cc-mode-setup ()
             (c-set-offset 'case-label '+)
             (setq c-basic-offset 4
@@ -841,6 +899,14 @@ are defining or executing a macro."
                   comment-start "//"
                   comment-end ""
                   tab-width 4))
+(with-eval-after-load 'lsp-mode
+    (setq lsp-clients-clangd-args
+          '("-j=2"
+            "--background-index"
+            "--clang-tidy"
+            "--completion-style=bundled"
+            "--pch-storage=memory"
+            "--suggest-missing-includes")))
   :hook ((c-mode-common . my/cc-mode-setup)))
 
 ;; A mode for editing cmake files.
@@ -1001,7 +1067,6 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     "http://dev.to/feed"
 
     ;;reddit
-    "http://reddit.com/r/clojure/.rss"
     "http://reddit.com/r/cpp/.rss"
     "http://reddit.com/r/emacs/.rss"
     "http://reddit.com/r/golang/.rss"
@@ -1057,174 +1122,146 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; Keybindings
 ;; ------------------------------------
-(evil-leader/set-key
+;; Using general for key describtions
+(use-package general
+  :config
+  (general-create-definer my/leader-keys
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-SPC")
+
+  (my/leader-keys
   ;; Evilmotion
-  "<SPC> j" (evilem-create 'next-line)
-  "<SPC> k" (evilem-create 'previous-line)
+  "<SPC>"  '(:ignore t :which-key "Evilmotion")
+  "<SPC>j" '((evilem-create 'next-line) :which-key "Sneak down")
+  "<SPC>k" '((evilem-create 'previous-line) :which-key "Sneak up")
 
-  ;;buffers & windows
-  "b s" 'ivy-switch-buffer
-  "b i" 'my/indent-buffer
-  "b e" 'ediff-buffers
+  ;; Apps
+  "a"  '(:ignore t :which-key "Apps")
+  "gd" '(docker :which-key "Docker")
+  "gc" '(docker-compose :which-key "Docker compose")
+  "gk" '(kubel :which-key "Kubernetes")
+  "an" '(elfeed :which-key "Feeds")
 
-  ;;config reload
-  "c r" '(lambda () (interactive) (load-file (expand-file-name "init.el" user-emacs-directory)))
+  ;; Buffers & windows
+  "b"  '(:ignore t :which-key "Buffer")
+  "bs" '(ivy-switch-buffer :which-key "Switch buffer")
+  "bi" '(my/indent-buffer :which-key "Indent buffer")
+  "be" '(ediff-buffers :which-key "Difference")
 
-  ;;dap
-  "d r" 'dap-debug-restart
-  "d l" 'dap-debug-last
-  "d f" 'dap-debug-recent
-  "d d" 'dap-debug
-  "d t" 'dap-debug-edit-template
-  "d h" '(lambda () (interactive) (dap-ui-mode t) (dap-hydra))
+  ;; Files
+  "f"  '(:ignore t :which-key "Files")
+  "fb" '(treemacs :which-key "File browser")
+  "fd" '(dired-jump :which-key "Dired")
+  "ff" '(find-file :which-key "Find file")
+  "fj" '(find-journal :which-key "Journal")
+  "fr" '(counsel-recentf :which-key "Recent files")
 
-  ;;files
-  "f f" 'treemacs
-  "f d" 'dired-jump
-  "f j" 'find-journal
-  "f r" 'counsel-recentf
+  ;; Git
+  "g"  '(:ignore t :which-key "Git")
+  "gs" '(magit-status :which-key "Magit")
+  "gm" '(magit-blame-addition :which-key "Blame")
 
-  ;;Git
-  "g s" 'magit-status
-  "g m" 'magit-blame-addition
+  ;; Org
+  "o"  '(:ignore t :which-key "Org")
+  "oa" '(org-agenda :which-key "Agenda")
 
-  ;;Kubernetes
-  "g k" 'kubel
+  ;; Quiting
+  "q"  '(:ignore t :which-key "Quit")
+  "qq" '(kill-buffer-and-window :which-key "Quit now")
 
-  ;;Docker
-  "g d" 'docker
-  "g c" 'docker-compose
-
-  ;;misc
-  "i" 'indent-region
-
-  ;;lsp
-  "l d" 'lsp-ui-peek-find-definitions
-  "l e" 'lsp-execute-code-action
-  "l o" 'lsp-rename
-  "l r" 'lsp-ui-peek-find-references
-  "l l" 'lsp-treemacs-errors-list
-
-  ;;elfeed
-  "n" 'elfeed
-
-  "o a" 'org-agenda
-
-  "p s" 'projectile-add-known-project
-  "p c" 'projectile-compile-project
-
-  "q" 'kill-buffer-and-window
-
-  "r h" 'hydra-window-resize/my/resize-window-left
-  "r j" 'hydra-window-resize/my/resize-window-down
-  "r k" 'hydra-window-resize/my/resize-window-up
-  "r l" 'hydra-window-resize/my/resize-window-right
+  ;; Resize buffers
+  "r"  '(:ignore t :which-key "Resize")
+  "rh" '(hydra-window-resize/my/resize-window-left :which-key "Left")
+  "rj" '(hydra-window-resize/my/resize-window-down :which-key "Down")
+  "rk" '(hydra-window-resize/my/resize-window-up :which-key "Up")
+  "rl" '(hydra-window-resize/my/resize-window-right :which-key "Right")
 
   ;;engine
-  "s a" 'engine/search-archwiki
-  "s c" 'engine/search-cppreference
-  "s b" 'engine/search-cmake
-  "s y" 'engine/search-youtube
-  "s d" 'engine/search-dockerhub
-  "s r" 'engine/search-rustdoc
-  "s w" 'engine/search-wikipedia
-  "s g i" 'engine/search-github
-  "s g o" 'engine/search-google
+  "s"  '(:ignore t :which-key "Search")
+  "sa" '(engine/search-archwiki :which-key "Archwiki")
+  "sc" '(engine/search-cppreference :which-key "Cpp")
+  "sb" '(engine/search-cmake :which-key "Cmake")
+  "sy" '(engine/search-youtube :which-key "Youtube")
+  "sd" '(engine/search-dockerhub :which-key "Dockerhub")
+  "sr" '(engine/search-rustdoc :which-key "Rustdocs")
+  "sw" '(engine/search-wikipedia :which-key "Wikipedia")
+  "sg" '(engine/search-google :which-key "Google")
+  "sG" '(engine/search-github :which-key "Github")
 
-  "v m" '(lambda () (interactive) (find-file "./CMakeLists.txt"))
-  "v d" '(lambda () (interactive) (find-file "./Dockerfile"))
-  "v c" '(lambda () (interactive) (find-file "./docker-compose.yml"))
-  "v p" '(lambda () (interactive) (find-file "./Pipfile"))
+  "w"  '(:ignore t :which-key "Windows")
+  "ww" '(tear-off-window :which-key "Tear off")
+  "wh" '(windmove-swap-states-left :which-key "Swap left")
+  "wj" '(windmove-swap-states-down :which-key "Swap down")
+  "wk" '(windmove-swap-states-up :which-key "Swap up")
+  "wl" '(windmove-swap-states-right :which-key "Swap right"))
+)
 
-  ;; window management
-  "w w" 'tear-off-window
-  "w h" 'windmove-swap-states-left
-  "w j" 'windmove-swap-states-down
-  "w k" 'windmove-swap-states-up
-  "w l" 'windmove-swap-states-right)
+;; Mode Keybindings
+(general-define-key
+ :states 'normal
+ :keymaps 'emacs-lisp-mode-map
+ :prefix "SPC"
+ :global-prefix "C-SPC"
+ "k" '(eval-buffer :which-key "Eval-buffer"))
 
-(evil-leader/set-key-for-mode 'dired-mode
-  "d i" '(lambda () (interactive) (start-process "sxiv" "*sxiv*" "sxiv" (dired-filename-at-point)))
-  "d g" 'dired-git-info-mode
-  "d e" 'dired-run-at-point
-  "Y" 'dired-copy-filename-as-kill nil)
+;; `general-def' can be used instead for `evil-define-key'-like syntax
+(general-def nil global-map
+ "C-x C-f" 'find-file
+ "C-x C-b" 'ivy-switch-buffer
+ "M-x" 'counsel-M-x
+ "C-c v" 'counsel-describe-variable
+ "C-c f" 'counsel-describe-function
+ "C-c C-f" 'counsel-find-file
+ "C-c C-d" 'racket-run-with-debugging
+ "C-c C-M-f" 'my/indent-buffer
+ "C-c p f" 'counsel-projectile-find-file
+ "M-p" 'emmet-expand-yas
+ "C-S-c" 'aya-create
+ "C-S-e" 'aya-expand
+ "C-s" 'save-buffer
+ "C-c l" 'org-store-link
+ "C-c a" 'org-todo-list
+ "C-k" 'kill-buffer-and-window
+ "C-c c" 'org-capture
+ "C-;" 'shell-pop
+ "C-'" 'grugru)
 
-(evil-leader/set-key-for-mode 'emacs-lisp-mode
-  "e" 'eval-last-sexp
-  "k" 'eval-buffer)
+(general-def 'normal 'emacs-lisp-mode-map
+ "K" 'elisp-slime-nav-describe-elisp-thing-at-point)
 
-(evil-leader/set-key-for-mode 'c++-mode
-  "u" 'clang-ide)
+(general-def nil 'org-mode-map
+  "M-H" 'org-shiftleft
+  "M-J" 'org-shiftdown
+  "M-K" 'org-shiftup
+  "M-L" 'org-shiftright
+  "M-h" 'org-metaleft
+  "M-j" 'org-metadown
+  "M-k" 'org-metaup
+  "M-l" 'org-metaright)
 
-(setq local-function-key-map (delq '(kp-tab . [9]) local-function-key-map))
+(general-def 'normal 'compilation-mode-map
+ "C-n" 'compilation-next-error
+ "C-p" 'compilation-previous-error)
 
-;;global state
-(evil-define-key nil global-map
-  (kbd "C-x C-f") 'find-file
-  (kbd "C-x C-b") 'ivy-switch-buffer
-  (kbd "M-x") 'counsel-M-x
-  (kbd "C-c v") 'counsel-describe-variable
-  (kbd "C-c f") 'counsel-describe-function
-  (kbd "C-c C-f") 'counsel-find-file
-  (kbd "C-c C-d") 'racket-run-with-debugging
-  (kbd "C-c C-M-f") 'my/indent-buffer
-  (kbd "C-c p f") 'counsel-projectile-find-file
-  (kbd "M-p") 'emmet-expand-yas
-  (kbd "C-S-c") 'aya-create
-  (kbd "C-S-e") 'aya-expand
-  (kbd "C-s") 'save-buffer
-  (kbd "C-c l") 'org-store-link
-  (kbd "C-c a") 'org-todo-list
-  (kbd "C-k") 'kill-buffer-and-window
-  (kbd "C-c c") 'org-capture
-  (kbd "C-;") 'shell-pop
-  (kbd "C-'") 'grugru)
+;; (general-def 'normal dired-mode-map
+;;   "Y" '(lambda () (interactive) (dired-copy-filename-as-kill 0))
+;;   "y" 'dired-copy-filename-as-kill)
 
-(evil-define-key nil org-mode-map
-  (kbd "M-H") 'org-shiftleft
-  (kbd "M-J") 'org-shiftdown
-  (kbd "M-K") 'org-shiftup
-  (kbd "M-L") 'org-shiftright
-  (kbd "M-h") 'org-metaleft
-  (kbd "M-j") 'org-metadown
-  (kbd "M-k") 'org-metaup
-  (kbd "M-l") 'org-metaright)
+(general-def nil 'go-mode-map
+ "C-c C-c" 'go-run)
 
-(evil-define-key 'normal compilation-mode-map
-  (kbd "C-n") 'compilation-next-error
-  (kbd "C-p") 'compilation-previous-error)
+(general-def '(normal insert) 'company-mode-map
+ "C-SPC" 'company-complete)
 
-(evil-define-key 'normal dired-mode-map
-  (kbd "Y") '(lambda () (interactive) (dired-copy-filename-as-kill 0))
-  (kbd "y") 'dired-copy-filename-as-kill)
+(general-def 'normal 'global-map
+ "Q" 'insert-output-of-executed-line
+ "C-/" 'evilnc-comment-or-uncomment-lines
+ "gcc" 'evilnc-comment-or-uncomment-lines)
 
-(evil-define-key nil go-mode-map
-  (kbd "C-c C-c") 'go-run)
-
-(evil-define-key 'normal global-map
-  (kbd "Q") 'insert-output-of-executed-line)
-
-(evil-define-key 'normal global-map
-  (kbd "C-/") 'evilnc-comment-or-uncomment-lines)
-
-(evil-define-key 'normal global-map
-  (kbd "gcc") 'evilnc-comment-or-uncomment-lines)
-
-(evil-define-key 'visual global-map
-  (kbd "S") 'evil-surround-region)
-
-(evil-define-key 'visual global-map
-  (kbd "gc") 'evilnc-comment-or-uncomment-lines)
-
-;; paredit mode
-(evil-define-key nil paredit-mode-map
-  (kbd "M-l") 'paredit-forward-slurp-sexp
-  (kbd "M-h") 'paredit-backward-slurp-sexp
-  (kbd "M-L") 'paredit-backward-barf-sexp
-  (kbd "M-H") 'paredit-forward-barf-sexp)
-
-(evil-define-key '(normal insert) company-mode-map
-  (kbd "C-SPC") 'company-complete)
+(general-def 'visual 'global-map
+  "S" 'evil-surround-region
+  "gc" 'evilnc-comment-or-uncomment-lines)
 
 ;; Increase / Decrease font
 (global-set-key (kbd "<M-up>") 'text-scale-increase)
@@ -1243,8 +1280,6 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   :init
   (progn
     (when (equal window-system 'w32)
-      ;; Set EMACS_SERVER_FILE to `server-auth-dir'\`server-name'
-      ;; e.g. c:\Users\Aaron\emacs.d\server\server
       (setq server-use-tcp t)))
   :config
   (unless (server-running-p)
