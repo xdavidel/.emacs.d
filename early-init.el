@@ -42,18 +42,15 @@
                             (right-divider-width . 1))
       default-frame-alist initial-frame-alist)
 
-
-;; Disable toolbar and scrollbar if in graphic mode
-(unless (display-graphic-p)
-    (tool-bar-mode -1))
-
 ;; Check if running inside termux
 ;; Might be replace with 'no graphics check'
 (require 'subr-x)
 (defvar my/is-termux
       (string-suffix-p "Android" (string-trim (shell-command-to-string "uname -a"))))
 
+;; Disable toolbar and scrollbar if not in termux
 (unless my/is-termux
+  (tool-bar-mode -1)
   (scroll-bar-mode -1))
 
 ;; Inhibit resizing frame.
