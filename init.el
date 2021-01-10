@@ -12,12 +12,6 @@
 ;; At this point use-package should be installed
 (require 'use-package)
 
-;; Check if running inside termux
-;; Might be replace with 'no graphics check'
-(require 'subr-x)
-(setq my/is-termux
-      (string-suffix-p "Android" (string-trim (shell-command-to-string "uname -a"))))
-
 ;; General Settings
 ;; ------------------------------------
 
@@ -338,12 +332,21 @@ are defining or executing a macro."
 ;; Recent files
 (use-package recentf
   :straight nil
-  :config
-  (recentf-mode t)
-  (add-to-list 'recentf-exclude "\\.gpg\\")
-  (setq recentf-max-saved-items 500
-          recentf-max-menu-items 15
-          recentf-auto-cleanup 60))
+  :hook (after-init . recentf-mode)
+  :custom
+  (recentf-max-saved-items 200)
+  (recentf-exclude '((expand-file-name package-user-dir)
+                     ".cache"
+                     ".cask"
+                     ".elfeed"
+                     "bookmarks"
+                     "cache"
+                     "ido.*"
+                     "persp-confs"
+                     "recentf"
+                     "undo-tree-hist"
+                     "url"
+                     "COMMIT_EDITMSG\\'")))
 
 ;; Auto focus help window
 (use-package help
@@ -725,6 +728,10 @@ are defining or executing a macro."
   (transient-append-suffix 'magit-status-jump '(0 0 -1)
     '("T " "Todos" magit-todos-jump-to-todos)))
 
+;; Use magit with treemacs
+(use-package treemacs-magit
+  :defer t
+  :after (treemacs magit))
 
 ;; Smart sorting and filtering for ivy
 (use-package ivy-prescient
@@ -750,11 +757,17 @@ are defining or executing a macro."
 
 ;; ;; LSP client
 (use-package lsp-mode
-  :commands (lsp lsp-deferred)
+  :defer t
+  :commands lsp
   :custom
+  (lsp-auto-guess-root nil)
+  (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
   (lsp-keymap-prefix "C-c l")
   (lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  (lsp-headerline-breadcrumb-mode))
+  (lsp-headerline-breadcrumb-mode)
+  :hook ((java-mode python-mode go-mode
+          js-mode js2-mode typescript-mode web-mode
+          c-mode c++-mode objc-mode) . lsp))
 
 ;; Python support
 (use-package lsp-python-ms
@@ -764,7 +777,24 @@ are defining or executing a macro."
 
 ;; Ui for lsp
 (use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode))
+  :after lsp-mode
+  :diminish
+  :commands lsp-ui-mode
+  :custom
+  (lsp-ui-doc-header t)
+  (lsp-ui-doc-include-signature t)
+  (lsp-ui-doc-border (face-foreground 'default))
+  (lsp-ui-sideline-enable nil)
+  (lsp-ui-sideline-ignore-duplicate t)
+  (lsp-ui-sideline-show-code-actions nil)
+  :config
+  ;; Use lsp-ui-doc-webkit only in GUI
+  (if (display-graphic-p)
+      (setq lsp-ui-doc-use-webkit t))
+  ;; WORKAROUND Hide mode-line of the lsp-ui-imenu buffer
+  ;; https://github.com/emacs-lsp/lsp-ui/issues/243
+  (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
+    (setq mode-line-format nil)))
 
 ;; Display references of a symbol, or diagnostic
 (use-package lsp-treemacs
@@ -775,16 +805,15 @@ are defining or executing a macro."
 
 ;; Debugger
 (use-package dap-mode
-  ;; Uncomment the config below if you want all UI panes to be hidden by default!
-  ;; :custom
-  ;; (lsp-enable-dap-auto-configure nil)
-  ;; :config
-  ;; (dap-ui-mode 1)
-  :config
-  ;; Set up Node debugging
-  (require 'dap-node)
-  (dap-node-setup) ;; Automatically installs Node debug adapter if needed
-  )
+  :diminish
+  :bind
+  (:map dap-mode-map
+        (("<f5>" . dap-debug)
+         ("<f8>" . dap-continue)
+         ("<f9>" . dap-next)
+         ("<f11>" . dap-step-in)
+         ("<f10>" . dap-step-out)
+         ("<f2>" . dap-breakpoint-toggle))))
 
 ;; Org Stuff
 ;; ------------------------------------
@@ -1051,6 +1080,9 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; Tools
 ;; ------------------------------------
 
+(use-package disk-usage
+  :commands (disk-usage))
+
 ;; Nerdtree like side bar
 (use-package treemacs-evil)
 
@@ -1126,6 +1158,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     :global-prefix "C-SPC")
 
   (my/leader-keys
+  :states 'normal
+  :keymaps 'override
   ;; Evilmotion
   "<SPC>"  '(:ignore t :which-key "Evilmotion")
   "<SPC>j" '((evilem-create 'next-line) :which-key "Sneak down")

@@ -45,8 +45,16 @@
 
 ;; Disable toolbar and scrollbar if in graphic mode
 (unless (display-graphic-p)
-    (tool-bar-mode -1)
-    (scroll-bar-mode -1))
+    (tool-bar-mode -1))
+
+;; Check if running inside termux
+;; Might be replace with 'no graphics check'
+(require 'subr-x)
+(defvar my/is-termux
+      (string-suffix-p "Android" (string-trim (shell-command-to-string "uname -a"))))
+
+(unless my/is-termux
+  (scroll-bar-mode -1))
 
 ;; Inhibit resizing frame.
 ;; Setting x-gtk-resize-child-frames variable to resize-mode fixes issue with GNOME Shell.
