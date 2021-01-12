@@ -1153,13 +1153,14 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (use-package general
   :config
   (general-create-definer my/leader-keys
-    :keymaps '(normal insert visual emacs)
+    :state 'normal
+    :keymaps 'global-map
     :prefix "SPC"
     :global-prefix "C-SPC")
 
   (my/leader-keys
   :states 'normal
-  :keymaps 'override
+  :keymaps 'global-map
   ;; Evilmotion
   "<SPC>"  '(:ignore t :which-key "Evilmotion")
   "<SPC>j" '((evilem-create 'next-line) :which-key "Sneak down")
