@@ -815,6 +815,9 @@ are defining or executing a macro."
          ("<f10>" . dap-step-out)
          ("<f2>" . dap-breakpoint-toggle))))
 
+(use-package elisp-slime-nav
+  :hook (emacs-lisp-mode . elisp-slime-name-mode))
+
 ;; Org Stuff
 ;; ------------------------------------
 
@@ -1260,6 +1263,9 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (general-def 'normal 'emacs-lisp-mode-map
  "K" 'elisp-slime-nav-describe-elisp-thing-at-point)
 
+(general-def 'normal
+ "K" 'lsp-describe-thing-at-point)
+
 (general-def nil 'org-mode-map
   "M-H" 'org-shiftleft
   "M-J" 'org-shiftdown
@@ -1294,14 +1300,14 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   "gc" 'evilnc-comment-or-uncomment-lines)
 
 ;; Increase / Decrease font
-(global-set-key (kbd "<M-up>") 'text-scale-increase)
-(global-set-key (kbd "<M-down>") 'text-scale-decrease)
+(general-define-key "<M-up>" 'text-scale-increase)
+(general-define-key "<M-down>" 'text-scale-decrease)
 
 ;; Move between buffers
-(global-set-key (kbd "C-h") 'evil-window-left)
-(global-set-key (kbd "C-j") 'evil-window-down)
-(global-set-key (kbd "C-k") 'evil-window-up)
-(global-set-key (kbd "C-l") 'evil-window-right)
+(general-define-key "C-h" 'evil-window-left)
+(general-define-key "C-j" 'evil-window-down)
+(general-define-key "C-k" 'evil-window-up)
+(general-define-key "C-l" 'evil-window-right)
 
 ;; ------------------------------------
 
