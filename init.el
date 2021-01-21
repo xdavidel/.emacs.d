@@ -172,6 +172,10 @@
 ;; Set color backgrounds to color names
 (use-package rainbow-mode
   :init (rainbow-mode))
+
+;; Rainbow colors for brackets
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 ;; ------------------------------------
 
 ;; Functions
@@ -200,6 +204,34 @@
   (save-excursion
     (save-restriction
       (indent-region (point-min) (point-max)))))
+
+;;; describe this point lisp only
+(defun describe-thing-at-point ()
+    "Show the documentation of the Elisp function and variable near point.
+This checks in turn:
+-- for a function name where point is
+-- for a variable name where point is
+-- for a surrounding function call
+"
+    (interactive)
+    (let (sym)
+    ;; sigh, function-at-point is too clever.  we want only the first half.
+    (cond ((setq sym (ignore-errors
+			(with-syntax-table emacs-lisp-mode-syntax-table
+			    (save-excursion
+			    (or (not (zerop (skip-syntax-backward "_w")))
+				(eq (char-syntax (char-after (point))) ?w)
+				(eq (char-syntax (char-after (point))) ?_)
+				(forward-sexp -1))
+			    (skip-chars-forward "`'")
+			    (let ((obj (read (current-buffer))))
+				(and (symbolp obj) (fboundp obj) obj))))))
+	    (describe-function sym))
+	    ((setq sym (variable-at-point)) (describe-variable sym))
+	    ;; now let it operate fully -- i.e. also check the
+	    ;; surrounding sexp for a function call.
+	    ((setq sym (function-at-point)) (describe-function sym)))))
+
 
 (defun my/escape ()
   "Quit in current context.
@@ -327,6 +359,7 @@ are defining or executing a macro."
 
 ;; Show matching parens
 (use-package paren
+  :straight nil
   :config (show-paren-mode 1))
 
 ;; Recent files
@@ -352,6 +385,14 @@ are defining or executing a macro."
 (use-package help
   :straight nil
   :custom (help-window-select t))
+
+;; Lightweight syntax highlighting improvement for numbers
+(use-package highlight-numbers
+  :hook (prog-mode . highlight-numbers-mode))
+
+;; Lightweight syntax highlighting improvement for escape sequences (e.g. \n, \t).
+(use-package highlight-escape-sequences
+  :hook (prog-mode . hes-mode))
 
 ;; Light narrowing framework
 (use-package ivy
@@ -815,9 +856,6 @@ are defining or executing a macro."
          ("<f10>" . dap-step-out)
          ("<f2>" . dap-breakpoint-toggle))))
 
-(use-package elisp-slime-nav
-  :hook (emacs-lisp-mode . elisp-slime-name-mode))
-
 ;; Org Stuff
 ;; ------------------------------------
 
@@ -847,7 +885,18 @@ are defining or executing a macro."
          "DONE(d)"
          "CANCELLED(c)" )))
   (org-hide-leading-stars t)
+  (org-directory (let ((dir (file-name-as-directory (expand-file-name "org" user-emacs-directory))))
+                      (make-directory dir :parents)
+                      dir))
+  (org-default-notes-file (expand-file-name "notes.org" org-directory))
   :config
+  (defvar my/one-org-agenda-file (expand-file-name "agenda.files" org-directory)
+      "One file to contain a list of all Org agenda files.")
+  (setq org-agenda-files (expand-file-name "agenda.files" org-directory))
+  (unless (file-exists-p my/one-org-agenda-file)
+      ;; http://stackoverflow.com/a/14072295/1219634
+      ;; touch `my/one-org-agenda-file'
+      (write-region "" :ignore my/one-org-agenda-file))
   (when (not (version<= org-version "9.1.9"))
     (use-package org-tempo
       :straight nil))
@@ -1156,18 +1205,16 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (use-package general
   :config
   (general-create-definer my/leader-keys
-    :state 'normal
-    :keymaps 'global-map
-    :prefix "SPC"
-    :global-prefix "C-SPC")
+    :prefix "SPC")
 
   (my/leader-keys
   :states 'normal
-  :keymaps 'global-map
+  :keymaps 'override
+
   ;; Evilmotion
   "<SPC>"  '(:ignore t :which-key "Evilmotion")
-  "<SPC>j" '((evilem-create 'next-line) :which-key "Sneak down")
-  "<SPC>k" '((evilem-create 'previous-line) :which-key "Sneak up")
+  "<SPC>j" '(evilem-motion-next-line :which-key "Sneak down")
+  "<SPC>k" '(evilem-motion-previous-line :which-key "Sneak up")
 
   ;; Apps
   "a"  '(:ignore t :which-key "Apps")
@@ -1198,6 +1245,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   ;; Org
   "o"  '(:ignore t :which-key "Org")
   "oa" '(org-agenda :which-key "Agenda")
+  "oc" '(org-capture :which-key "Capture")
+  "ot" '(org-todo-list :which-key "Todo")
 
   ;; Quiting
   "q"  '(:ignore t :which-key "Quit")
@@ -1260,11 +1309,11 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
  "C-;" 'shell-pop
  "C-'" 'grugru)
 
-(general-def 'normal 'emacs-lisp-mode-map
- "K" 'elisp-slime-nav-describe-elisp-thing-at-point)
-
-(general-def 'normal
+(general-def 'normal prog-mode-map
  "K" 'lsp-describe-thing-at-point)
+
+(general-def 'normal emacs-lisp-mode-map
+ "K" 'describe-thing-at-point)
 
 (general-def nil 'org-mode-map
   "M-H" 'org-shiftleft
@@ -1308,6 +1357,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (general-define-key "C-j" 'evil-window-down)
 (general-define-key "C-k" 'evil-window-up)
 (general-define-key "C-l" 'evil-window-right)
+
+(define-key global-map "F" '("foo" . find-file))
 
 ;; ------------------------------------
 
