@@ -785,8 +785,8 @@ are defining or executing a macro."
   :init
   (add-hook 'python-mode-hook 'smartparens-mode)
   (add-hook 'c++-mode-hook 'smartparens-mode)
-  (add-hook 'lisp-interaction-mode-hook 'smartparens-strict-mode)
-  (add-hook 'emacs-lisp-mode-hook 'smartparens-strict-mode)
+  (add-hook 'lisp-interaction-mode-hook 'smartparens-mode)
+  (add-hook 'emacs-lisp-mode-hook 'smartparens-mode)
   :config
   ;; highligh matching brackets
   (show-smartparens-global-mode 0)
@@ -889,14 +889,22 @@ are defining or executing a macro."
                       (make-directory dir :parents)
                       dir))
   (org-default-notes-file (expand-file-name "notes.org" org-directory))
+  (org-capture-templates
+    `(("t" "Tasks / Projects")
+      ("tt" "Task" entry (file+olp+datetree "tasks.org")
+           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+
+      ("j" "Journal Entries")
+      ("jj" "Journal" entry (file+olp+datetree "journal.org")
+           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+           :clock-in :clock-resume
+           :empty-lines 1)
+      ("jm" "Meeting" entry
+           (file+olp+datetree "meetings.org")
+           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+           :clock-in :clock-resume
+           :empty-lines 1)))
   :config
-  (defvar my/one-org-agenda-file (expand-file-name "agenda.files" org-directory)
-      "One file to contain a list of all Org agenda files.")
-  (setq org-agenda-files (expand-file-name "agenda.files" org-directory))
-  (unless (file-exists-p my/one-org-agenda-file)
-      ;; http://stackoverflow.com/a/14072295/1219634
-      ;; touch `my/one-org-agenda-file'
-      (write-region "" :ignore my/one-org-agenda-file))
   (when (not (version<= org-version "9.1.9"))
     (use-package org-tempo
       :straight nil))
@@ -996,6 +1004,10 @@ are defining or executing a macro."
   :after cc-mode
   :bind (:map c-mode-base-map
          ("C-c C-M-f" . clang-format-buffer)))
+
+(use-package
+  irony
+  :hook (c-mode-common . irony-mode))
 
 ;; Rust syntax highlighting
 (use-package rust-mode
