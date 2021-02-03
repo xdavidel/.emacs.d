@@ -1373,14 +1373,14 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; Increase / Decrease font
 (general-define-key "<M-up>" 'text-scale-increase)
 (general-define-key "<M-down>" 'text-scale-decrease)
+(general-define-key "<C-mouse-4>" 'text-scale-increase)
+(general-define-key "<C-mouse-5>" 'text-scale-decrease)
 
 ;; Move between buffers
 (general-define-key "C-h" 'evil-window-left)
 (general-define-key "C-j" 'evil-window-down)
 (general-define-key "C-k" 'evil-window-up)
 (general-define-key "C-l" 'evil-window-right)
-
-(define-key global-map "F" '("foo" . find-file))
 
 ;; ------------------------------------
 
