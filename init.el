@@ -278,6 +278,17 @@ are defining or executing a macro."
   (unless (member major-mode '(diff-mode))
     (delete-trailing-whitespace-except-current-line)))
 
+;; Auto-indent after paste yanked
+(defadvice insert-for-yank-1 (after indent-region activate)
+  "Indent yanked region in certain modes, C-u prefix to disable"
+  (if (and (not current-prefix-arg)
+           (member major-mode '(sh-mode
+                                emacs-lisp-mode lisp-mode
+                                c-mode c++-mode objc-mode d-mode java-mode cuda-mode js-mode
+                                LaTeX-mode TeX-mode
+                                xml-mode html-mode css-mode)))
+      (indent-region (region-beginning) (region-end) nil)))
+
 (add-hook 'before-save-hook #'smart-delete-trailing-whitespace)
 ;; ------------------------------------
 
