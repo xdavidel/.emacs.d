@@ -981,9 +981,11 @@ are defining or executing a macro."
     (visual-fill-column-mode 1))
   :hook (org-mode . my/org-mode-visual-fill))
 
-;; Table of contents
-(use-package org-make-toc
-  :hook (org-mode . org-make-toc-mode))
+;; Table of contents using `:toc:`
+(use-package toc-org
+  :hook
+  (org-mode . toc-org-mode)
+  (markdown-mode . toc-org-mode))
 
 ;; Structure Templates
 ;; ------------------------------------
