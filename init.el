@@ -923,10 +923,13 @@ are defining or executing a macro."
   ;; add plantuml to org sources
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
 
+  ;; add source templates
   (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("py" . "src python"))
   (add-to-list 'org-structure-template-alist '("cc" . "src c++"))
+
+  ;; change header size on different levels
   (dolist (face '((org-level-1 . 1.2)
                   (org-level-2 . 1.1)
                   (org-level-3 . 1.05)
