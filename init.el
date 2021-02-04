@@ -936,6 +936,10 @@ are defining or executing a macro."
                   (org-level-7 . 1.1)
                   (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil :height (cdr face)))
+
+  ;; Save Org buffers after refiling!
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+
   (defun my/discard-history ()
     "Discard undo history of org src and capture blocks."
     (setq buffer-undo-list nil)
