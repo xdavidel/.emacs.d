@@ -919,6 +919,10 @@ are defining or executing a macro."
   (when (not (version<= org-version "9.1.9"))
     (use-package org-tempo
       :straight nil))
+
+  ;; add plantuml to org sources
+  (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+
   (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("py" . "src python"))
@@ -1148,6 +1152,11 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   :hook (json-mode . flycheck-mode)
   :custom (js-indent-level 2))
 
+;; Plantuml mode
+(use-package plantuml-mode
+  :config
+  (add-to-list 'auto-mode-alist
+	       '("\\.plantuml\\'" . plantuml-mode)))
 ;; ------------------------------------
 
 ;; Containers
