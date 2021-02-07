@@ -60,15 +60,8 @@
   :straight nil
   :custom
   (initial-major-mode 'fundamental-mode)
-  (initial-scratch-message ""))
-
-;; No splash screen on empty emacs
-(use-package startup
-  :no-require t
-  :straight nil
-  :custom
+  (initial-scratch-message "")
   (inhibit-splash-screen t))
-;; (setq inhibit-startup-screen t)
 
 ;; No line wrap be default
 (setq-default truncate-lines t)
@@ -110,45 +103,50 @@
 
 ;; Move quickly in the document
 (use-package evil-easymotion
+  :commands (evilem-motion-next-line evilem-motion-previous-line)
   :after evil)
 
 ;; Comment code efficiently
 (use-package evil-nerd-commenter
+  :commands (evilnc-comment-or-uncomment-lines)
   :after evil)
 
 ;; Terminal cursor mode support
-(use-package evil-terminal-cursor-changer
-  :init
-  (evil-terminal-cursor-changer-activate)
-  (setq evil-motion-state-cursor 'box)  ; █
-  (setq evil-visual-state-cursor 'box)  ; █
-  (setq evil-normal-state-cursor 'box)  ; █
-  (setq evil-insert-state-cursor 'bar)  ; |
-  (setq evil-emacs-state-cursor  'hbar) ; _
-  )
-
-;; View matches info
-(use-package evil-anzu)
+;; more readable :)
+(unless (display-graphic-p)
+  (use-package evil-terminal-cursor-changer
+    :init
+    (evil-terminal-cursor-changer-activate)
+    (setq evil-motion-state-cursor 'box)  ; █
+    (setq evil-visual-state-cursor 'box)  ; █
+    (setq evil-normal-state-cursor 'box)  ; █
+    (setq evil-insert-state-cursor 'bar)  ; |
+    (setq evil-emacs-state-cursor  'hbar) ; _
+    ))
 
 ;; Vim like surround package
 (use-package evil-surround
-   :config
-   (global-evil-surround-mode))
+  :after evil
+  :config
+  (global-evil-surround-mode))
 
 ;; View Registers and marks
 (use-package evil-owl
-   :custom
-   (evil-owl-display-method 'posframe)
-   (evil-owl-extra-posfram-args '(:width 50 :height 20))
-   (evil-owl-idle-delay 0)
-   :init
-   (evil-owl-mode))
+  :after evil
+  :custom
+  (evil-owl-display-method 'posframe)
+  (evil-owl-extra-posfram-args '(:width 50 :height 20))
+  (evil-owl-idle-delay 0)
+  :config
+  (evil-owl-mode))
 
 ;; Increment / Decrement binary, octal, decimal and hex literals
-(use-package evil-numbers)
+(use-package evil-numbers
+  :commands (evil-numbers/inc-at-pt evil-numbers/dec-at-pt))
 
-;; Jump between opening/closing tags
-(use-package evil-matchit)
+;; Jump between opening/closing tags using %
+(use-package evil-matchit
+  :after evil)
 
 ;; ------------------------------------
 
@@ -171,7 +169,7 @@
 
 ;; Set color backgrounds to color names
 (use-package rainbow-mode
-  :init (rainbow-mode))
+  :hook (prog-mode . rainbow-mode))
 
 ;; Rainbow colors for brackets
 (use-package rainbow-delimiters
@@ -364,10 +362,6 @@ are defining or executing a macro."
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-;; Minor mode that highlights source code uniquely
-(use-package color-identifiers-mode
-  :defer t)
-
 ;; Show matching parens
 (use-package paren
   :straight nil
@@ -395,6 +389,7 @@ are defining or executing a macro."
 ;; Auto focus help window
 (use-package help
   :straight nil
+  :commands (help)
   :custom (help-window-select t))
 
 ;; Lightweight syntax highlighting improvement for numbers
@@ -425,7 +420,7 @@ are defining or executing a macro."
   (ivy-re-builders-alist '((t . ivy--regex-ignore-order)))
   (ivy-use-virtual-buffers t)
   (ivy-extra-directories nil)
-  :init
+  :config
   (defun my/minibuffer-defer-garbage-collection ()
     "Defer garbage collection for minibuffer"
     (setq gc-cons-threshold most-positive-fixnum))
@@ -793,11 +788,9 @@ are defining or executing a macro."
 
 ;; Be smart when using parens, and highlight content
 (use-package smartparens
-  :init
-  (add-hook 'python-mode-hook 'smartparens-mode)
-  (add-hook 'c++-mode-hook 'smartparens-mode)
-  (add-hook 'lisp-interaction-mode-hook 'smartparens-mode)
-  (add-hook 'emacs-lisp-mode-hook 'smartparens-mode)
+  :hook ((java-mode python-mode go-mode
+		    js-mode js2-mode typescript-mode web-mode
+		    c-mode c++-mode objc-mode) . smartparens-mode)
   :config
   ;; highligh matching brackets
   (show-smartparens-global-mode 0)
@@ -853,11 +846,12 @@ are defining or executing a macro."
   :after lsp)
 
 ;; Search symbols with ivy
-(use-package lsp-ivy)
+(use-package lsp-ivy
+  :after (lsp ivy))
 
 ;; Debugger
 (use-package dap-mode
-  :diminish
+  :commands dap-debug
   :bind
   (:map dap-mode-map
         (("<f5>" . dap-debug)
@@ -875,6 +869,7 @@ are defining or executing a macro."
   ;; :straight (:type built-in)
   :hook ((ediff-prepare-buffer . outline-show-all)
          ((org-capture-mode org-src-mode) . my/discard-history))
+  :commands (org-capture org-agenda)
   :custom
   (org-ellipsis " ▼")
   (org-startup-with-inline-images nil)
@@ -994,9 +989,6 @@ are defining or executing a macro."
   (org-mode . toc-org-mode)
   (markdown-mode . toc-org-mode))
 
-;; Structure Templates
-;; ------------------------------------
-
 
 ;; Programming Languages
 ;; ------------------------------------
@@ -1007,13 +999,17 @@ are defining or executing a macro."
 
 ;; Python
 (use-package pyvenv
-  :demand t
+  :mode ("\\.py\\'" . python-mode)
   :config
   (setq pyvenv-workon "emacs")  ; Default venv
   (pyvenv-tracking-mode 1))  ; Automatically use pyvenv-workon via dir-locals
 
 (use-package cc-mode
   :straight nil
+  :mode (("\\.c\\'" . c-mode-common)
+	 ("\\.cpp\\'" . c-mode-common)
+	 ("\\.h\\'" . c-mode-common)
+	 ("\\.hpp\\'" . c-mode-common))
   :defines (lsp-clients-clangd-args)
   :config (defun my/cc-mode-setup ()
             (c-set-offset 'case-label '+)
@@ -1063,7 +1059,8 @@ are defining or executing a macro."
   :hook ((rust-mode toml-mode) . cargo-minor-mode))
 
 ;; Syntax highlighting of TOML files
-(use-package toml-mode)
+(use-package toml-mode
+  :mode ("\\.toml\\'" . toml-mode))
 
 ;; Nice LISP/Scheme language
 (use-package racket-mode
@@ -1134,6 +1131,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; Yaml support
 (use-package yaml-mode
+  :mode ("\\.yaml\\'" . yaml-mode)
   :custom (yaml-indent-offset 4))
 
 ;; Yaml linter with flycheck
@@ -1148,11 +1146,13 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   :hook (sh-mode . flycheck-mode))
 
 ;; Lua mode
-(use-package lua-mode)
+(use-package lua-mode
+  :mode ("\\.lua\\'" . lua-mode))
 
 ;; CSS mode
 (use-package css-mode
   :straight nil
+  :mode ("\\.css\\'" . css-mode)
   :custom
   (css-indent-offset 2))
 
@@ -1163,6 +1163,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; Plantuml mode
 (use-package plantuml-mode
+  :mode (("\\.plantuml\\'" . plantuml-mode)
+	 ("\\.pu\\'" . plantuml-mode))
   :config
   (add-to-list 'auto-mode-alist
 	       '("\\.plantuml\\'" . plantuml-mode)))
@@ -1172,10 +1174,12 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; ------------------------------------
 
 ;; Kubernetes
-(use-package kubel-evil)
+(use-package kubel-evil
+  :commands kubel)
 
 ;; Docker
-(use-package docker)
+(use-package docker
+  :commands docker)
 
 ;; ------------------------------------
 
@@ -1191,6 +1195,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; RSS feed
 (use-package elfeed
+  :commands (elfeed)
   :custom
   (elfeed-feeds '(
     ;;dev.to
@@ -1229,26 +1234,27 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; Search engines
 (use-package engine-mode
-    :straight (:branch "main")
-    :config
-    (defengine archwiki
-            "https://wiki.archlinux.org/index.php?title=Special:Search&search=%s")
-    (defengine cppreference
-	    "https://en.cppreference.com/mwiki/index.php?search=%s")
-    (defengine cmake
-	    "https://cmake.org/cmake/help/latest/search.html?q=%s&check_keywords=yes&area=default")
-    (defengine google
-	    "https://google.com/search?q=%s")
-    (defengine youtube
-	    "https://www.youtube.com/results?search_query=%s")
-    (defengine dockerhub
-	    "https://hub.docker.com/search?q=%s&type=image")
-    (defengine github
-	    "https://github.com/search?q=%s")
-    (defengine rustdoc
-	    "https://doc.rust-lang.org/rustdoc/what-is-rustdoc.html?search=%s")
-    (defengine wikipedia
-	    "https://en.wikipedia.org/wiki/%s"))
+  :straight (:branch "main")
+  :hook (prog-mode . engine-mode)
+  :config
+  (defengine archwiki
+    "https://wiki.archlinux.org/index.php?title=Special:Search&search=%s")
+  (defengine cppreference
+    "https://en.cppreference.com/mwiki/index.php?search=%s")
+  (defengine cmake
+    "https://cmake.org/cmake/help/latest/search.html?q=%s&check_keywords=yes&area=default")
+  (defengine google
+    "https://google.com/search?q=%s")
+  (defengine youtube
+    "https://www.youtube.com/results?search_query=%s")
+  (defengine dockerhub
+    "https://hub.docker.com/search?q=%s&type=image")
+  (defengine github
+    "https://github.com/search?q=%s")
+  (defengine rustdoc
+    "https://doc.rust-lang.org/rustdoc/what-is-rustdoc.html?search=%s")
+  (defengine wikipedia
+    "https://en.wikipedia.org/wiki/%s"))
 
 ;; Keybindings
 ;; ------------------------------------
