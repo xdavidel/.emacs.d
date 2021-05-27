@@ -311,13 +311,6 @@ are defining or executing a macro."
   :hook (dired-mode . all-the-icons-dired-mode))
 ;; ------------------------------------
 
-;; Distinguish buffers that are for utilities
-(use-package solaire-mode
-  :hook ((change-major-mode after-revert ediff-prepare-buffer) . turn-on-solaire-mode)
-  (minibuffer-setup . solaire-mode-in-minibuffer)
-  :config
-  (solaire-mode-swap-bg))
-
 ;; Line numbers
 (use-package display-line-numbers
   :straight nil
