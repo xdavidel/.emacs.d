@@ -24,7 +24,7 @@
 (setq ring-bell-function 'ignore)
 
 ;; Set transparent background
-(defvar my/frame-transparency '(95 . 80))
+(defvar my/frame-transparency '(95 . 95))
 (set-frame-parameter (selected-frame) 'alpha my/frame-transparency)
 (add-to-list 'default-frame-alist `(alpha . ,my/frame-transparency))
 
@@ -499,108 +499,8 @@ are defining or executing a macro."
 
 ;; Syntax checking
 (use-package flycheck
-  :bind (:map flycheck-mode-map
-         ("C-c ! C-h" . hydrant/flycheck/body))
-  :custom
-  (flycheck-indication-mode 'right-fringe)
-  (flycheck-display-errors-delay 86400 "86400 seconds is 1 day")
-  :config
-  (when (fboundp #'define-fringe-bitmap)
-    (define-fringe-bitmap 'flycheck-double-exclamation-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b00000000
-              #b01100110
-              #b01100110
-              #b00000000
-              #b00000000
-              #b00000000))
-    (define-fringe-bitmap 'flycheck-exclamation-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00000000
-              #b00000000))
-    (define-fringe-bitmap 'flycheck-question-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b00111100
-              #b01111110
-              #b01100110
-              #b01100110
-              #b00000110
-              #b00001100
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00000000
-              #b00000000))
-    (flycheck-define-error-level 'error
-      :severity 100
-      :compilation-level 2
-      :overlay-category 'flycheck-error-overlay
-      :fringe-bitmap 'flycheck-double-exclamation-mark
-      :fringe-face 'flycheck-fringe-error
-      :error-list-face 'flycheck-error-list-error)
-    (flycheck-define-error-level 'warning
-      :severity 100
-      :compilation-level 1
-      :overlay-category 'flycheck-warning-overlay
-      :fringe-bitmap 'flycheck-exclamation-mark
-      :fringe-face 'flycheck-fringe-warning
-      :error-list-face 'flycheck-error-list-warning)
-    (flycheck-define-error-level 'info
-      :severity 100
-      :compilation-level 0
-      :overlay-category 'flycheck-info-overlay
-      :fringe-bitmap 'flycheck-question-mark
-      :fringe-face 'flycheck-fringe-info
-      :error-list-face 'flycheck-error-list-info))
-
- (when (fboundp #'defhydra)
-   (defhydra hydrant/flycheck (:color blue :hint nil)
-     "
- ^Flycheck^         ^Errors^       ^Checker^
- _q_: quit          _<_: previous  _?_: describe
- _M_: manual        _>_: next      _d_: disable
- _v_: verify setup  _f_: check     _m_: mode
- ^ ^                _l_: list      _s_: select"
-     ("q" ignore :exit t)
-     ("M" flycheck-manual)
-     ("v" flycheck-verify-setup)
-     ("<" flycheck-previous-error :color pink)
-     (">" flycheck-next-error :color pink)
-     ("f" flycheck-buffer)
-     ("l" flycheck-list-errors)
-     ("?" flycheck-describe-checker)
-     ("d" flycheck-disable-checker)
-     ("m" flycheck-mode)
-     ("s" flycheck-select-checker))))
+  :after (lsp)
+  :hook (lsp-mode . flycheck-mode))
 
 (use-package hydra)
   :config
@@ -649,7 +549,6 @@ are defining or executing a macro."
     ("h" my/resize-window-left "left"))
 
   (defhydra hydra-outline (:color pink :hint nil)
-
 
     "
  ^Hide^             ^Show^           ^Move
@@ -999,10 +898,10 @@ are defining or executing a macro."
 
 (use-package cc-mode
   :straight nil
-  :mode (("\\.c\\'" . c-mode-common)
-	 ("\\.cpp\\'" . c-mode-common)
-	 ("\\.h\\'" . c-mode-common)
-	 ("\\.hpp\\'" . c-mode-common))
+  :mode (("\\.c\\'" . c-mode)
+	 ("\\.cpp\\'" . c-mode)
+	 ("\\.h\\'" . c-mode)
+	 ("\\.hpp\\'" . c-mode))
   :defines (lsp-clients-clangd-args)
   :config (defun my/cc-mode-setup ()
             (c-set-offset 'case-label '+)
@@ -1024,13 +923,14 @@ are defining or executing a macro."
 
 ;; Format C code with Clang Format
 (use-package clang-format
+  :if (executable-find "clang")
   :after cc-mode
   :bind (:map c-mode-base-map
          ("C-c C-M-f" . clang-format-buffer)))
 
 (use-package
   irony
-  :hook (c-mode-common . irony-mode))
+  :hook (c-mode . irony-mode))
 
 ;; Rust syntax highlighting
 (use-package rust-mode
@@ -1054,18 +954,6 @@ are defining or executing a macro."
 ;; Syntax highlighting of TOML files
 (use-package toml-mode
   :mode ("\\.toml\\'" . toml-mode))
-
-;; Nice LISP/Scheme language
-(use-package racket-mode
-  :bind (:map racket-mode-map
-         (")" . self-insert-command)
-         ("]" . self-insert-command)
-         ("}" . self-insert-command))
-  :config
-  (set-face-attribute 'racket-debug-break-face nil :background (face-attribute 'error :foreground) :foreground (face-attribute 'default :background))
-  (set-face-attribute 'racket-debug-result-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
-  (set-face-attribute 'racket-debug-locals-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
-  (set-face-attribute 'racket-selfeval-face nil :foreground (face-attribute 'default :foreground)))
 
 ;; Lisp and ELisp mode
 (use-package elisp-mode
@@ -1399,8 +1287,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   "gc" 'evilnc-comment-or-uncomment-lines)
 
 ;; Increase / Decrease font
-(general-define-key "<M-up>" 'text-scale-increase)
-(general-define-key "<M-down>" 'text-scale-decrease)
+(general-define-key "C-=" 'text-scale-increase)
+(general-define-key "C--" 'text-scale-decrease)
 (general-define-key "<C-mouse-4>" 'text-scale-increase)
 (general-define-key "<C-mouse-5>" 'text-scale-decrease)
 
