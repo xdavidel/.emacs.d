@@ -25,7 +25,7 @@
 (setq ring-bell-function 'ignore)
 
 ;; Set transparent background
-(defvar my/frame-transparency '(95 . 80))
+(defvar my/frame-transparency '(95 . 95))
 (set-frame-parameter (selected-frame) 'alpha my/frame-transparency)
 (add-to-list 'default-frame-alist `(alpha . ,my/frame-transparency))
 
@@ -430,6 +430,7 @@ This checks in turn:
   :config
   (company-posframe-mode))
 
+
 ;; Buitin file manager
 (use-package dired
   :straight nil
@@ -494,7 +495,6 @@ This checks in turn:
     ("h" my/resize-window-left "left"))
 
   (defhydra hydra-outline (:color pink :hint nil)
-
 
     "
  ^Hide^             ^Show^           ^Move
@@ -864,13 +864,14 @@ This checks in turn:
 
 ;; Format C code with Clang Format
 (use-package clang-format
+  :if (executable-find "clang")
   :after cc-mode
   :bind (:map c-mode-base-map
          ("C-c C-M-f" . clang-format-buffer)))
 
 (use-package
   irony
-  :hook (c-mode-common . irony-mode))
+  :hook (c-mode . irony-mode))
 
 ;; Rust syntax highlighting
 (use-package rust-mode
@@ -894,18 +895,6 @@ This checks in turn:
 ;; Syntax highlighting of TOML files
 (use-package toml-mode
   :mode ("\\.toml\\'" . toml-mode))
-
-;; Nice LISP/Scheme language
-(use-package racket-mode
-  :bind (:map racket-mode-map
-         (")" . self-insert-command)
-         ("]" . self-insert-command)
-         ("}" . self-insert-command))
-  :config
-  (set-face-attribute 'racket-debug-break-face nil :background (face-attribute 'error :foreground) :foreground (face-attribute 'default :background))
-  (set-face-attribute 'racket-debug-result-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
-  (set-face-attribute 'racket-debug-locals-face nil :foreground (face-attribute 'font-lock-comment-face :foreground) :box nil)
-  (set-face-attribute 'racket-selfeval-face nil :foreground (face-attribute 'default :foreground)))
 
 ;; Lisp and ELisp mode
 (use-package elisp-mode
@@ -1227,8 +1216,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   "gc" 'evilnc-comment-or-uncomment-lines)
 
 ;; Increase / Decrease font
-(general-define-key "<M-up>" 'text-scale-increase)
-(general-define-key "<M-down>" 'text-scale-decrease)
+(general-define-key "C-=" 'text-scale-increase)
+(general-define-key "C--" 'text-scale-decrease)
 (general-define-key "<C-mouse-4>" 'text-scale-increase)
 (general-define-key "<C-mouse-5>" 'text-scale-decrease)
 
