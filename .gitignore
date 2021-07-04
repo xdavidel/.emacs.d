@@ -4,3 +4,6 @@ recentf
 smex-items
 straight/
 tmp/
+server
+transient
+*.cache

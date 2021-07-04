@@ -18,6 +18,7 @@
 ;; Allow async compilation of packages
 (use-package async
   :init
+  (dired-async-mode 1)
   (async-bytecomp-package-mode 1))
 
 ;; Disable bells
@@ -28,31 +29,13 @@
 (set-frame-parameter (selected-frame) 'alpha my/frame-transparency)
 (add-to-list 'default-frame-alist `(alpha . ,my/frame-transparency))
 
-;; Answering just 'y' or 'n' will do
-(defalias 'yes-or-no-p 'y-or-n-p)
-
 ;; Decrease echo keystrokes
 (add-hook 'after-init-hook (lambda () (setq echo-keystrokes 5)))
-
-;; Don't center curser at off screen
-(setq scroll-conservatively 101)
-
-;; Create a margin for off screen
-(setq scroll-margin 5)
-
-;; Auto refresh changed buffers
-(global-auto-revert-mode t)
 
 ;; Save history between sessions
 (use-package savehist
   :straight nil
   :config (savehist-mode 1))
-
-;; UTF-8 if possible
-(prefer-coding-system 'utf-8)
-(set-default-coding-systems 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
 
 ;; Scratch is clean and for normal text
 (use-package startup
@@ -67,62 +50,74 @@
 (setq-default truncate-lines t)
 
 ;; Dont use a bar - use Ctrl + mouse-r instead
-(menu-bar-mode -1)
+(use-package emacs
+  :straight nil
+  :config
+  (menu-bar-mode -1)
+  (blink-cursor-mode -1)
+  (fset 'yes-or-no-p 'y-or-n-p)
+  ;; UTF-8 if possible
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  ;; Don't center curser at off screen
+  (setq scroll-conservatively 101)
+  ;; Create a margin for off screen
+  (setq scroll-margin 5)
+  ;; Auto refresh changed buffers
+  (global-auto-revert-mode t))
 
 ;; ------------------------------------
 
 
 ;; EVIL - Load it as fast as possible
 ;; ------------------------------------
-
-;; Evil basic configs
-(setq evil-want-integration t
-      evil-want-keybinding nil
-      evil-vsplit-window-right t
-      evil-want-C-i-jump nil)
-
-;; Use leader key for Evil
-(use-package evil-leader
-   :init
-   (global-evil-leader-mode)
-   (evil-leader/set-leader "<SPC>"))
-
-;; Collection of bindings Evil does not cover
-(use-package evil-collection
-   :after evil-leader
-   :custom
-   (evil-collection-company-use-tng nil)
-   :init
-   (evil-collection-init))
+(progn
+;; Better undo for evil
+(use-package undo-fu)
+(use-package undo-fu-session
+  :after undo-fu
+  :init
+  (global-undo-fu-session-mode))
 
 ;; Basic Evil mode
 (use-package evil
-   :after evil-collection
-   :init
-    (evil-mode 1))
+  :after undo-fu-session
+  :init
+  (setq evil-want-integration t
+	evil-want-keybinding nil
+	evil-want-Y-yank-to-eol t
+	evil-vsplit-window-right t
+	evil-split-window-below t
+	evil-want-C-i-jump nil
+	evil-undo-system 'undo-fu)
+  :config
+  (evil-mode 1)
+  (evil-set-leader 'normal " "))
+
+;; Collection of bindings Evil does not cover
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
 
 ;; Move quickly in the document
 (use-package evil-easymotion
-  :commands (evilem-motion-next-line evilem-motion-previous-line)
-  :after evil)
+  :after evil
+  :commands (evilem-motion-next-line evilem-motion-previous-line))
 
 ;; Comment code efficiently
 (use-package evil-nerd-commenter
-  :commands (evilnc-comment-or-uncomment-lines)
-  :after evil)
+  :after evil
+  :commands (evilnc-comment-or-uncomment-lines))
 
 ;; Terminal cursor mode support
 ;; more readable :)
 (unless (display-graphic-p)
   (use-package evil-terminal-cursor-changer
-    :init
-    (evil-terminal-cursor-changer-activate)
-    (setq evil-motion-state-cursor 'box)  ; █
-    (setq evil-visual-state-cursor 'box)  ; █
-    (setq evil-normal-state-cursor 'box)  ; █
-    (setq evil-insert-state-cursor 'bar)  ; |
-    (setq evil-emacs-state-cursor  'hbar) ; _
-    ))
+    :config
+      (evil-terminal-cursor-changer-activate)))
 
 ;; Vim like surround package
 (use-package evil-surround
@@ -146,13 +141,12 @@
 
 ;; Jump between opening/closing tags using %
 (use-package evil-matchit
-  :after evil)
+  :after evil))
 
 ;; ------------------------------------
 
 ;; Theme
 ;; ------------------------------------
-
 (use-package doom-themes
   :custom
   (doom-themes-enable-bold t)
@@ -178,20 +172,6 @@
 
 ;; Functions
 ;; ------------------------------------
-(defun my/real-buffer-p (&optional buffer)
-  "Determines whether BUFFER is real."
-  (not (or (string-match-p
-            (regexp-opt '("*Treemacs"
-                          "*vterm*"
-                          " *Minibuf"
-                          " *Echo Area"
-                          "*Process List*"
-                          "*Ediff"
-                          " *LV*"
-                          "*Ilist*"))
-            (buffer-name buffer))
-           (minibufferp))))
-
 (defun my/font-installed-p (font-name)
   "Check if font with FONT-NAME is available."
   (find-font (font-spec :name font-name)))
@@ -202,6 +182,13 @@
   (save-excursion
     (save-restriction
       (indent-region (point-min) (point-max)))))
+
+(defun sudo-save ()
+  "save this file as super user"
+  (interactive)
+  (if (not buffer-file-name)
+      (write-file (concat "/sudo:root@localhost:" (read-file-name "File:")))
+    (write-file (concat "/sudo:root@localhost:" buffer-file-name))))
 
 ;;; describe this point lisp only
 (defun describe-thing-at-point ()
@@ -230,29 +217,6 @@ This checks in turn:
 	    ;; surrounding sexp for a function call.
 	    ((setq sym (function-at-point)) (describe-function sym)))))
 
-
-(defun my/escape ()
-  "Quit in current context.
-
-When there is an active minibuffer and we are not inside it close
-it.  When we are inside the minibuffer use the regular
-`minibuffer-keyboard-quit' which quits any active region before
-exiting.  When there is no minibuffer `keyboard-quit' unless we
-are defining or executing a macro."
-  (interactive)
-  (cond ((active-minibuffer-window)
-         (if (minibufferp)
-             (minibuffer-keyboard-quit)
-           (abort-recursive-edit)))
-        ((bound-and-true-p iedit-mode)
-         (iedit-quit))
-        (t
-         (unless (or defining-kbd-macro
-                     executing-kbd-macro)
-           (keyboard-quit)))))
-(global-set-key [remap keyboard-quit] #'my/escape)
-
-;; Remove useless whitespace before saving a file
 (defun delete-trailing-whitespace-except-current-line ()
   "An alternative to `delete-trailing-whitespace'.
    The original function deletes trailing whitespace of the current line."
@@ -393,63 +357,32 @@ are defining or executing a macro."
 (use-package highlight-escape-sequences
   :hook (prog-mode . hes-mode))
 
-;; Light narrowing framework
-(use-package ivy
-  :commands ivy-mode
-  :hook ((minibuffer-setup . my/minibuffer-defer-garbage-collection)
-         (minibuffer-exit . my/minibuffer-restore-garbage-collection))
-  :bind (:map ivy-minibuffer-map
-         ("C-j" . ivy-next-line)
-         ("C-k" . ivy-previous-line))
+;; Lightweight completion framwork
+(use-package vertico
+  :init
+  (vertico-mode)
   :custom-face
-  (ivy-org ((t (:inherit default))))
+  (vertico-current ((t (:background "#3a3f5a")))))
+
+;; Fuzzy search
+(use-package orderless
+  :custom (completion-styles '(orderless)))
+
+;; Rich completions
+(use-package marginalia
+  :after vertico
   :custom
-  (ivy-ignore-buffers '("\\` " "\\`\\*"))
-  (ivy-use-selectable-prompt t)
-  (ivy-count-format "(%d/%d) ")
-  (ivy-display-style 'fancy)
-  (ivy-dynamic-exhibit-delay-ms 200)
-  (ivy-initial-inputs-alist nil)
-  (ivy-re-builders-alist '((t . ivy--regex-ignore-order)))
-  (ivy-use-virtual-buffers t)
-  (ivy-extra-directories nil)
-  :config
-  (defun my/minibuffer-defer-garbage-collection ()
-    "Defer garbage collection for minibuffer"
-    (setq gc-cons-threshold most-positive-fixnum))
-  (defun my/minibuffer-restore-garbage-collection ()
-    "Resotre garbage collection settings."
-    (run-at-time
-     1 nil (lambda () (setq gc-cons-threshold my/gc-cons-threshold))))
-  (ivy-mode 1))
+  (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
+  :init
+  (marginalia-mode))
 
-;; Alternative & better menu
-(use-package counsel
-  :after ivy
-  :commands (counsel-M-x
-	counsel-find-file
-	counsel-file-jump
-	counsel-recentf
-	counsel-rg
-	counsel-describe-function
-	counsel-describe-variable
-	counsel-find-library)
-  :config
-  (use-package smex)
-  (when (executable-find "fd")
-    (define-advice counsel-file-jump (:around (foo &optional initial-input initial-directory) aorst:counsel-fd)
-      (let ((find-program "fd")
-            (counsel-file-jump-args (split-string "-L --type f --hidden")))
-        (funcall foo initial-input initial-directory))))
-  (when (executable-find "rg")
-    (setq counsel-rg-base-command
-          "rg -S --no-heading --hidden --line-number --color never %s .")))
-
-;; A better ivy with decriptions
-(use-package ivy-rich
-  :after counsel
-  :config
-  (ivy-rich-mode 1))
+;; Menu completion
+(use-package consult
+  :after vertico
+  :hook (completion-setup . hl-line-mode)
+  :custom
+  (completion-in-region-function #'consult-completion-in-region)
+  )
 
 ;; Completion framwork for anything
 (use-package company
@@ -497,110 +430,22 @@ are defining or executing a macro."
   :config
   (company-posframe-mode))
 
-;; Syntax checking
-(use-package flycheck
-  :bind (:map flycheck-mode-map
-         ("C-c ! C-h" . hydrant/flycheck/body))
-  :custom
-  (flycheck-indication-mode 'right-fringe)
-  (flycheck-display-errors-delay 86400 "86400 seconds is 1 day")
+;; Buitin file manager
+(use-package dired
+  :straight nil
+  :custom ((dired-listing-switches "-aghoA --group-directories-first"))
   :config
-  (when (fboundp #'define-fringe-bitmap)
-    (define-fringe-bitmap 'flycheck-double-exclamation-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b01100110
-              #b00000000
-              #b01100110
-              #b01100110
-              #b00000000
-              #b00000000
-              #b00000000))
-    (define-fringe-bitmap 'flycheck-exclamation-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00000000
-              #b00000000))
-    (define-fringe-bitmap 'flycheck-question-mark
-      (vector #b00000000
-              #b00000000
-              #b00000000
-              #b00111100
-              #b01111110
-              #b01100110
-              #b01100110
-              #b00000110
-              #b00001100
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00011000
-              #b00011000
-              #b00000000
-              #b00000000
-              #b00000000))
-    (flycheck-define-error-level 'error
-      :severity 100
-      :compilation-level 2
-      :overlay-category 'flycheck-error-overlay
-      :fringe-bitmap 'flycheck-double-exclamation-mark
-      :fringe-face 'flycheck-fringe-error
-      :error-list-face 'flycheck-error-list-error)
-    (flycheck-define-error-level 'warning
-      :severity 100
-      :compilation-level 1
-      :overlay-category 'flycheck-warning-overlay
-      :fringe-bitmap 'flycheck-exclamation-mark
-      :fringe-face 'flycheck-fringe-warning
-      :error-list-face 'flycheck-error-list-warning)
-    (flycheck-define-error-level 'info
-      :severity 100
-      :compilation-level 0
-      :overlay-category 'flycheck-info-overlay
-      :fringe-bitmap 'flycheck-question-mark
-      :fringe-face 'flycheck-fringe-info
-      :error-list-face 'flycheck-error-list-info))
+  (setq dired-omit-files
+	(rx (or (seq bol (? ".") "#")
+		(seq bol "." eol)
+		(seq bol ".." eol))))
 
- (when (fboundp #'defhydra)
-   (defhydra hydrant/flycheck (:color blue :hint nil)
-     "
- ^Flycheck^         ^Errors^       ^Checker^
- _q_: quit          _<_: previous  _?_: describe
- _M_: manual        _>_: next      _d_: disable
- _v_: verify setup  _f_: check     _m_: mode
- ^ ^                _l_: list      _s_: select"
-     ("q" ignore :exit t)
-     ("M" flycheck-manual)
-     ("v" flycheck-verify-setup)
-     ("<" flycheck-previous-error :color pink)
-     (">" flycheck-next-error :color pink)
-     ("f" flycheck-buffer)
-     ("l" flycheck-list-errors)
-     ("?" flycheck-describe-checker)
-     ("d" flycheck-disable-checker)
-     ("m" flycheck-mode)
-     ("s" flycheck-select-checker))))
+  (evil-collection-define-key 'normal 'dired-mode-map
+    "-" 'dired-up-directory)
+  (evil-collection-define-key 'normal 'dired-mode-map
+    (kbd "<backspace>") 'dired-up-directory)
+  (define-key  evil-normal-state-map (kbd "-") (lambda () (interactive)
+						 (dired ".")))) ; [built-in] file manager
 
 (use-package hydra)
   :config
@@ -773,12 +618,6 @@ are defining or executing a macro."
   :defer t
   :after (treemacs magit))
 
-;; Smart sorting and filtering for ivy
-(use-package ivy-prescient
-  :after ivy
-  :config
-  (ivy-prescient-mode))
-
 ;; Be smart when using parens, and highlight content
 (use-package smartparens
   :hook ((java-mode python-mode go-mode
@@ -838,10 +677,6 @@ are defining or executing a macro."
 (use-package lsp-treemacs
   :after lsp)
 
-;; Search symbols with ivy
-(use-package lsp-ivy
-  :after (lsp ivy))
-
 ;; Debugger
 (use-package dap-mode
   :commands dap-debug
@@ -853,6 +688,7 @@ are defining or executing a macro."
          ("<f11>" . dap-step-in)
          ("<f10>" . dap-step-out)
          ("<f2>" . dap-breakpoint-toggle))))
+
 
 ;; Org Stuff
 ;; ------------------------------------
@@ -904,18 +740,20 @@ are defining or executing a macro."
            :clock-in :clock-resume
            :empty-lines 1)))
   :config
-  (when (not (version<= org-version "9.1.9"))
-    (use-package org-tempo
-      :straight nil))
-
   ;; add plantuml to org sources
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
-
-  ;; add source templates
-  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  (add-to-list 'org-structure-template-alist '("py" . "src python"))
-  (add-to-list 'org-structure-template-alist '("cc" . "src c++"))
+  (when (not (version<= org-version "9.1.9"))
+    (use-package org-tempo
+      :straight nil
+      :config
+      ;; add source templates
+      (add-to-list 'org-structure-template-alist '("sh"  . "src shell"))
+      (add-to-list 'org-structure-template-alist '("el"  . "src emacs-lisp"))
+      (add-to-list 'org-structure-template-alist '("py"  . "src python"))
+      (add-to-list 'org-structure-template-alist '("c"   . "src c"))
+      (add-to-list 'org-structure-template-alist '("cpp" . "src c++"))
+      (add-to-list 'org-structure-template-alist '("go"  . "src go"))
+      ))
 
   ;; change header size on different levels
   (dolist (face '((org-level-1 . 1.2)
@@ -959,6 +797,7 @@ are defining or executing a macro."
     (my/org-babel-tangle-async (buffer-file-name)))
   (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my/org-babel-tangle-dont-ask))))
 
+;; Show bullets in a nice way
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
@@ -997,12 +836,13 @@ are defining or executing a macro."
   (setq pyvenv-workon "emacs")  ; Default venv
   (pyvenv-tracking-mode 1))  ; Automatically use pyvenv-workon via dir-locals
 
+;; C / C++
 (use-package cc-mode
   :straight nil
-  :mode (("\\.c\\'" . c-mode-common)
-	 ("\\.cpp\\'" . c-mode-common)
-	 ("\\.h\\'" . c-mode-common)
-	 ("\\.hpp\\'" . c-mode-common))
+  :mode (("\\.c\\'" . c-mode)
+	 ("\\.cpp\\'" . c-mode)
+	 ("\\.h\\'" . c-mode)
+	 ("\\.hpp\\'" . c-mode))
   :defines (lsp-clients-clangd-args)
   :config (defun my/cc-mode-setup ()
             (c-set-offset 'case-label '+)
@@ -1207,16 +1047,10 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; ------------------------------------
 
 
-(use-package counsel-projectile
-  :config
-  (counsel-projectile-mode +1))
-
 (use-package projectile
   :diminish projectile-mode
-  :after counsel-projectile
   :config
   (projectile-mode +1)
-  (setq projectile-completion-system 'ivy) ;So projectile works with ivy
   (setq projectile-git-submodule-command nil)
   (setq projectile-indexing-method 'alien))
 
@@ -1252,6 +1086,10 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; Keybindings
 ;; ------------------------------------
 ;; Using general for key describtions
+
+;; Use escape to close
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
 (use-package general
   :config
   (general-create-definer my/leader-keys
@@ -1275,7 +1113,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
   ;; Buffers & windows
   "b"  '(:ignore t :which-key "Buffer")
-  "bs" '(ivy-switch-buffer :which-key "Switch buffer")
+  "bs" '(switch-to-buffer :which-key "Switch buffer")
   "bi" '(my/indent-buffer :which-key "Indent buffer")
   "be" '(ediff-buffers :which-key "Difference")
 
@@ -1285,7 +1123,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   "fd" '(dired-jump :which-key "Dired")
   "ff" '(find-file :which-key "Find file")
   "fj" '(find-journal :which-key "Journal")
-  "fr" '(counsel-recentf :which-key "Recent files")
+  "fr" '(consult-recent-file :which-key "Recent files")
 
   ;; Git
   "g"  '(:ignore t :which-key "Git")
@@ -1340,14 +1178,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; `general-def' can be used instead for `evil-define-key'-like syntax
 (general-def nil global-map
  "C-x C-f" 'find-file
- "C-x C-b" 'ivy-switch-buffer
- "M-x" 'counsel-M-x
- "C-c v" 'counsel-describe-variable
- "C-c f" 'counsel-describe-function
- "C-c C-f" 'counsel-find-file
  "C-c C-d" 'racket-run-with-debugging
  "C-c C-M-f" 'my/indent-buffer
- "C-c p f" 'counsel-projectile-find-file
  "M-p" 'emmet-expand-yas
  "C-S-c" 'aya-create
  "C-S-e" 'aya-expand
@@ -1378,10 +1210,6 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (general-def 'normal 'compilation-mode-map
  "C-n" 'compilation-next-error
  "C-p" 'compilation-previous-error)
-
-;; (general-def 'normal dired-mode-map
-;;   "Y" '(lambda () (interactive) (dired-copy-filename-as-kill 0))
-;;   "y" 'dired-copy-filename-as-kill)
 
 (general-def nil 'go-mode-map
  "C-c C-c" 'go-run)
