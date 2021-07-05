@@ -68,80 +68,88 @@
   ;; Auto refresh changed buffers
   (global-auto-revert-mode t))
 
+;; Set default connection mode to SSH
+(setq tramp-default-method "ssh")
+
 ;; ------------------------------------
 
 
 ;; EVIL - Load it as fast as possible
 ;; ------------------------------------
 (progn
-;; Better undo for evil
-(use-package undo-fu)
-(use-package undo-fu-session
-  :after undo-fu
-  :init
-  (global-undo-fu-session-mode))
+  ;; Better undo for evil
+  (use-package undo-fu)
+  (use-package undo-fu-session
+    :after undo-fu
+    :init
+    (global-undo-fu-session-mode))
 
-;; Basic Evil mode
-(use-package evil
-  :after undo-fu-session
-  :init
-  (setq evil-want-integration t
-	evil-want-keybinding nil
-	evil-want-Y-yank-to-eol t
-	evil-vsplit-window-right t
-	evil-split-window-below t
-	evil-want-C-i-jump nil
-	evil-undo-system 'undo-fu)
-  :config
-  (evil-mode 1)
-  (evil-set-leader 'normal " "))
-
-;; Collection of bindings Evil does not cover
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
-
-;; Move quickly in the document
-(use-package evil-easymotion
-  :after evil
-  :commands (evilem-motion-next-line evilem-motion-previous-line))
-
-;; Comment code efficiently
-(use-package evil-nerd-commenter
-  :after evil
-  :commands (evilnc-comment-or-uncomment-lines))
-
-;; Terminal cursor mode support
-;; more readable :)
-(unless (display-graphic-p)
-  (use-package evil-terminal-cursor-changer
+  ;; Basic Evil mode
+  (use-package evil
+    :bind (:map evil-window-map
+	   ("<left>" . evil-window-left)
+	   ("<right>" . evil-window-right)
+	   ("<up>" . evil-window-up)
+	   ("<down>" . evil-window-down))
+    :after undo-fu-session
+    :init
+    (setq evil-want-integration t
+	  evil-want-keybinding nil
+	  evil-want-Y-yank-to-eol t
+	  evil-vsplit-window-right t
+	  evil-split-window-below t
+	  evil-want-C-i-jump nil
+	  evil-undo-system 'undo-fu)
     :config
+    (evil-mode 1)
+    (evil-set-leader 'normal " "))
+
+  ;; Collection of bindings Evil does not cover
+  (use-package evil-collection
+    :after evil
+    :config
+    (evil-collection-init))
+
+  ;; Move quickly in the document
+  (use-package evil-easymotion
+    :after evil
+    :commands (evilem-motion-next-line evilem-motion-previous-line))
+
+  ;; Comment code efficiently
+  (use-package evil-nerd-commenter
+    :after evil
+    :commands (evilnc-comment-or-uncomment-lines))
+
+  ;; Terminal cursor mode support
+  ;; more readable :)
+  (unless (display-graphic-p)
+    (use-package evil-terminal-cursor-changer
+      :config
       (evil-terminal-cursor-changer-activate)))
 
-;; Vim like surround package
-(use-package evil-surround
-  :after evil
-  :config
-  (global-evil-surround-mode))
+  ;; Vim like surround package
+  (use-package evil-surround
+    :after evil
+    :config
+    (global-evil-surround-mode))
 
-;; View Registers and marks
-(use-package evil-owl
-  :after evil
-  :custom
-  (evil-owl-display-method 'posframe)
-  (evil-owl-extra-posfram-args '(:width 50 :height 20))
-  (evil-owl-idle-delay 0)
-  :config
-  (evil-owl-mode))
+  ;; View Registers and marks
+  (use-package evil-owl
+    :after evil
+    :custom
+    (evil-owl-display-method 'posframe)
+    (evil-owl-extra-posfram-args '(:width 50 :height 20))
+    (evil-owl-idle-delay 0)
+    :config
+    (evil-owl-mode))
 
-;; Increment / Decrement binary, octal, decimal and hex literals
-(use-package evil-numbers
-  :commands (evil-numbers/inc-at-pt evil-numbers/dec-at-pt))
+  ;; Increment / Decrement binary, octal, decimal and hex literals
+  (use-package evil-numbers
+    :commands (evil-numbers/inc-at-pt evil-numbers/dec-at-pt))
 
-;; Jump between opening/closing tags using %
-(use-package evil-matchit
-  :after evil))
+  ;; Jump between opening/closing tags using %
+  (use-package evil-matchit
+    :after evil))
 
 ;; ------------------------------------
 
@@ -192,48 +200,48 @@
 
 ;;; describe this point lisp only
 (defun describe-thing-at-point ()
-    "Show the documentation of the Elisp function and variable near point.
+  "Show the documentation of the Elisp function and variable near point.
 This checks in turn:
 -- for a function name where point is
 -- for a variable name where point is
 -- for a surrounding function call
 "
-    (interactive)
-    (let (sym)
+  (interactive)
+  (let (sym)
     ;; sigh, function-at-point is too clever.  we want only the first half.
     (cond ((setq sym (ignore-errors
-			(with-syntax-table emacs-lisp-mode-syntax-table
-			    (save-excursion
-			    (or (not (zerop (skip-syntax-backward "_w")))
-				(eq (char-syntax (char-after (point))) ?w)
-				(eq (char-syntax (char-after (point))) ?_)
-				(forward-sexp -1))
-			    (skip-chars-forward "`'")
-			    (let ((obj (read (current-buffer))))
-				(and (symbolp obj) (fboundp obj) obj))))))
-	    (describe-function sym))
-	    ((setq sym (variable-at-point)) (describe-variable sym))
-	    ;; now let it operate fully -- i.e. also check the
-	    ;; surrounding sexp for a function call.
-	    ((setq sym (function-at-point)) (describe-function sym)))))
+		       (with-syntax-table emacs-lisp-mode-syntax-table
+			 (save-excursion
+			   (or (not (zerop (skip-syntax-backward "_w")))
+			       (eq (char-syntax (char-after (point))) ?w)
+			       (eq (char-syntax (char-after (point))) ?_)
+			       (forward-sexp -1))
+			   (skip-chars-forward "`'")
+			   (let ((obj (read (current-buffer))))
+			     (and (symbolp obj) (fboundp obj) obj))))))
+	   (describe-function sym))
+	  ((setq sym (variable-at-point)) (describe-variable sym))
+	  ;; now let it operate fully -- i.e. also check the
+	  ;; surrounding sexp for a function call.
+	  ((setq sym (function-at-point)) (describe-function sym)))))
 
 (defun delete-trailing-whitespace-except-current-line ()
   "An alternative to `delete-trailing-whitespace'.
    The original function deletes trailing whitespace of the current line."
   (interactive)
   (let ((begin (line-beginning-position))
-        (end (line-end-position)))
+	(end (line-end-position)))
     (save-excursion
       (when (< (point-min) (1- begin))
-        (save-restriction
-          (narrow-to-region (point-min) (1- begin))
-          (delete-trailing-whitespace)
-          (widen)))
+	(save-restriction
+	  (narrow-to-region (point-min) (1- begin))
+	  (delete-trailing-whitespace)
+	  (widen)))
       (when (> (point-max) (+ end 2))
-        (save-restriction
-          (narrow-to-region (+ end 2) (point-max))
-          (delete-trailing-whitespace)
-          (widen))))))
+	(save-restriction
+	  (narrow-to-region (+ end 2) (point-max))
+	  (delete-trailing-whitespace)
+	  (widen))))))
 
 (defun smart-delete-trailing-whitespace ()
   "Invoke `delete-trailing-whitespace-except-current-line' on selected major modes only."
@@ -244,11 +252,11 @@ This checks in turn:
 (defadvice insert-for-yank-1 (after indent-region activate)
   "Indent yanked region in certain modes, C-u prefix to disable"
   (if (and (not current-prefix-arg)
-           (member major-mode '(sh-mode
-                                emacs-lisp-mode lisp-mode
-                                c-mode c++-mode objc-mode d-mode java-mode cuda-mode js-mode
-                                LaTeX-mode TeX-mode
-                                xml-mode html-mode css-mode)))
+	   (member major-mode '(sh-mode
+				emacs-lisp-mode lisp-mode
+				c-mode c++-mode objc-mode d-mode java-mode cuda-mode js-mode
+				LaTeX-mode TeX-mode
+				xml-mode html-mode css-mode)))
       (indent-region (region-beginning) (region-end) nil)))
 
 (add-hook 'before-save-hook #'smart-delete-trailing-whitespace)
@@ -267,7 +275,7 @@ This checks in turn:
 (use-package all-the-icons
   :config
   (when (and (not (my/font-installed-p "all-the-icons"))
-             (window-system))
+	     (window-system))
     (all-the-icons-install-fonts t)))
 
 ;; Icons for dired
@@ -284,11 +292,11 @@ This checks in turn:
   (display-line-numbers-width 4)
   (display-line-numbers-width-start t)
   (add-hook 'display-line-numbers-mode-hook
-	 (lambda () (setq display-line-numbers-type 'relative))))
+	    (lambda () (setq display-line-numbers-type 'relative))))
 
 ;; Undo/Redo with C-c left/right
 (when (fboundp 'winner-mode)
-    (winner-mode 1))
+  (winner-mode 1))
 
 ;; Don't Lock Files
 (setq-default create-lockfiles nil)
@@ -331,17 +339,17 @@ This checks in turn:
   :custom
   (recentf-max-saved-items 200)
   (recentf-exclude '((expand-file-name package-user-dir)
-                     ".cache"
-                     ".cask"
-                     ".elfeed"
-                     "bookmarks"
-                     "cache"
-                     "ido.*"
-                     "persp-confs"
-                     "recentf"
-                     "undo-tree-hist"
-                     "url"
-                     "COMMIT_EDITMSG\\'")))
+		     ".cache"
+		     ".cask"
+		     ".elfeed"
+		     "bookmarks"
+		     "cache"
+		     "ido.*"
+		     "persp-confs"
+		     "recentf"
+		     "undo-tree-hist"
+		     "url"
+		     "COMMIT_EDITMSG\\'")))
 
 ;; Auto focus help window
 (use-package help
@@ -387,22 +395,22 @@ This checks in turn:
 ;; Completion framwork for anything
 (use-package company
   :bind (:map company-active-map
-         ("<down>"   . company-select-next)
-         ("<up>"   . company-select-previous)
-         ("TAB" . company-complete-common-or-cycle)
-         ("<tab>" . company-complete-common-or-cycle)
-         ("<S-Tab>" . company-select-previous)
-         ("<backtab>" . company-select-previous)
-         ("RET"   . company-complete-selection)
-         ("<ret>" . company-complete-selection))
+	 ("<down>"   . company-select-next)
+	 ("<up>"   . company-select-previous)
+	 ("TAB" . company-complete-common-or-cycle)
+	 ("<tab>" . company-complete-common-or-cycle)
+	 ("<S-Tab>" . company-select-previous)
+	 ("<backtab>" . company-select-previous)
+	 ("RET"   . company-complete-selection)
+	 ("<ret>" . company-complete-selection))
   :hook (after-init . global-company-mode)
   :custom
   (company-require-match 'never)
   (company-minimum-prefix-length 2)
   (company-tooltip-align-annotations t)
   (company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                       company-preview-frontend
-                       company-echo-metadata-frontend))
+		       company-preview-frontend
+		       company-echo-metadata-frontend))
   (company-backends '(company-capf company-files))
   (company-tooltip-minimum-width 30)
   (company-tooltip-maximum-width 60))
@@ -417,16 +425,16 @@ This checks in turn:
   (company-posframe-quickhelp-delay nil)
   (company-posframe-quickhelp-show-params
    (list :poshandler #'company-posframe-quickhelp-right-poshandler
-         :internal-border-width 1
-         :timeout 60
-         :internal-border-color (face-attribute 'mode-line :background)
-         :no-properties nil))
+	 :internal-border-width 1
+	 :timeout 60
+	 :internal-border-color (face-attribute 'mode-line :background)
+	 :no-properties nil))
   (company-posframe-show-params
    (list :poshandler #'company-posframe-quickhelp-right-poshandler
-         :internal-border-width 1
-         :timeout 60
-         :internal-border-color (face-attribute 'mode-line :background)
-         :no-properties nil))
+	 :internal-border-width 1
+	 :timeout 60
+	 :internal-border-color (face-attribute 'mode-line :background)
+	 :no-properties nil))
   :config
   (company-posframe-mode))
 
@@ -434,69 +442,66 @@ This checks in turn:
 ;; Buitin file manager
 (use-package dired
   :straight nil
+  :bind (:map dired-mode-map
+	 ("-" . dired-up-directory)
+	 ("<backspace>" . dired-up-directory))
   :custom ((dired-listing-switches "-aghoA --group-directories-first"))
   :config
   (setq dired-omit-files
 	(rx (or (seq bol (? ".") "#")
 		(seq bol "." eol)
-		(seq bol ".." eol))))
+		(seq bol ".." eol)))))
 
-  (evil-collection-define-key 'normal 'dired-mode-map
-    "-" 'dired-up-directory)
-  (evil-collection-define-key 'normal 'dired-mode-map
-    (kbd "<backspace>") 'dired-up-directory)
-  (define-key  evil-normal-state-map (kbd "-") (lambda () (interactive)
-						 (dired ".")))) ; [built-in] file manager
 
 (use-package hydra)
-  :config
-  (defhydra hydra-expand-region ()
-    "region: "
-    ("k" er/expand-region "expand")
-    ("j" er/contract-region "contract"))
+:config
+(defhydra hydra-expand-region ()
+  "region: "
+  ("k" er/expand-region "expand")
+  ("j" er/contract-region "contract"))
 
-  (defhydra hydra-fold (:pre (hs-minor-mode 1))
-    "fold"
-    ("t" fold-dwim-toggle "toggle")
-    ("h" fold-dwim-hide-all "hide-all")
-    ("s" fold-dwim-show-all "show-all")
-    ("q" nil "quit"))
+(defhydra hydra-fold (:pre (hs-minor-mode 1))
+  "fold"
+  ("t" fold-dwim-toggle "toggle")
+  ("h" fold-dwim-hide-all "hide-all")
+  ("s" fold-dwim-show-all "show-all")
+  ("q" nil "quit"))
 
-  (defun my/resize-window-down ()
-    "Resize a window downwards."
-    (interactive)
-    (if (window-in-direction 'below)
-        (enlarge-window 1)
-      (shrink-window 1)))
-  (defun my/resize-window-up ()
-    "Resize a window upwards."
-    (interactive)
-    (if (window-in-direction 'above)
-        (enlarge-window 1)
-      (shrink-window 1)))
-  (defun my/resize-window-left ()
-    "Resize a window leftwards."
-    (interactive)
-    (if (window-in-direction 'left)
-        (enlarge-window-horizontally 1)
-      (shrink-window-horizontally 1)))
-  (defun my/resize-window-right ()
-    "Resize a window rightwards."
-    (interactive)
-    (if (window-in-direction 'right)
-        (enlarge-window-horizontally 1)
-      (shrink-window-horizontally 1)))
+(defun my/resize-window-down ()
+  "Resize a window downwards."
+  (interactive)
+  (if (window-in-direction 'below)
+      (enlarge-window 1)
+    (shrink-window 1)))
+(defun my/resize-window-up ()
+  "Resize a window upwards."
+  (interactive)
+  (if (window-in-direction 'above)
+      (enlarge-window 1)
+    (shrink-window 1)))
+(defun my/resize-window-left ()
+  "Resize a window leftwards."
+  (interactive)
+  (if (window-in-direction 'left)
+      (enlarge-window-horizontally 1)
+    (shrink-window-horizontally 1)))
+(defun my/resize-window-right ()
+  "Resize a window rightwards."
+  (interactive)
+  (if (window-in-direction 'right)
+      (enlarge-window-horizontally 1)
+    (shrink-window-horizontally 1)))
 
-  (defhydra hydra-window-resize (global-map "C-c w")
-    "Window resizing"
-    ("j" my/resize-window-down "down")
-    ("k" my/resize-window-up "up")
-    ("l" my/resize-window-right "right")
-    ("h" my/resize-window-left "left"))
+(defhydra hydra-window-resize (global-map "C-c w")
+  "Window resizing"
+  ("j" my/resize-window-down "down")
+  ("k" my/resize-window-up "up")
+  ("l" my/resize-window-right "right")
+  ("h" my/resize-window-left "left"))
 
-  (defhydra hydra-outline (:color pink :hint nil)
+(defhydra hydra-outline (:color pink :hint nil)
 
-    "
+  "
  ^Hide^             ^Show^           ^Move
  ^^^^^^------------------------------------------------------
  _q_: sublevels     _a_: all         _u_: up
@@ -506,30 +511,30 @@ This checks in turn:
  _l_: leaves        _s_: subtree     _b_: backward same level
  _d_: subtree   _<tab>_: cycle
  "
-    ;; Hide
-    ("q" hide-sublevels)  ; Hide everything but the top-level headings
-    ("t" hide-body)    ; Hide everything but headings (all body lines)
-    ("o" hide-other)   ; Hide other branches
-    ("c" hide-entry)   ; Hide this entry's body
-    ("l" hide-leaves)  ; Hide body lines in this entry and sub-entries
-    ("d" hide-subtree) ; Hide everything in this entry and sub-entries
-    ;; Show
-    ("a" show-all)                      ; Show (expand) everything
-    ("e" show-entry)                    ; Show this heading's body
-    ("i" show-children) ; Show this heading's immediate child sub-headings
-    ("k" show-branches) ; Show all sub-headings under this heading
-    ("s" show-subtree) ; Show (expand) everything in this heading & below
-    ("<tab>" org-cycle)
-    ;; Move
-    ("u" outline-up-heading)               ; Up
-    ("n" outline-next-visible-heading)     ; Next
-    ("p" outline-previous-visible-heading) ; Previous
-    ("f" outline-forward-same-level)       ; Forward - same level
-    ("b" outline-backward-same-level)      ; Backward - same level
-    ("z" nil "leave"))
+  ;; Hide
+  ("q" hide-sublevels)  ; Hide everything but the top-level headings
+  ("t" hide-body)    ; Hide everything but headings (all body lines)
+  ("o" hide-other)   ; Hide other branches
+  ("c" hide-entry)   ; Hide this entry's body
+  ("l" hide-leaves)  ; Hide body lines in this entry and sub-entries
+  ("d" hide-subtree) ; Hide everything in this entry and sub-entries
+  ;; Show
+  ("a" show-all)                      ; Show (expand) everything
+  ("e" show-entry)                    ; Show this heading's body
+  ("i" show-children) ; Show this heading's immediate child sub-headings
+  ("k" show-branches) ; Show all sub-headings under this heading
+  ("s" show-subtree) ; Show (expand) everything in this heading & below
+  ("<tab>" org-cycle)
+  ;; Move
+  ("u" outline-up-heading)               ; Up
+  ("n" outline-next-visible-heading)     ; Next
+  ("p" outline-previous-visible-heading) ; Previous
+  ("f" outline-forward-same-level)       ; Forward - same level
+  ("b" outline-backward-same-level)      ; Backward - same level
+  ("z" nil "leave"))
 
-  (defhydra multiple-cursors-hydra (:hint nil)
-    "
+(defhydra multiple-cursors-hydra (:hint nil)
+  "
       ^Up^            ^Down^        ^Other^
  ----------------------------------------------
  [_p_]   Next    [_n_]   Next    [_l_] Edit lines
@@ -537,44 +542,44 @@ This checks in turn:
  [_M-p_] Unmark  [_M-n_] Unmark  [_r_] Mark by regexp
  ^ ^             ^ ^             [_q_] Quit
  "
-    ("l" mc/edit-lines :exit t)
-    ("a" mc/mark-all-like-this :exit t)
-    ("n" mc/mark-next-like-this)
-    ("N" mc/skip-to-next-like-this)
-    ("M-n" mc/unmark-next-like-this)
-    ("p" mc/mark-previous-like-this)
-    ("P" mc/skip-to-previous-like-this)
-    ("M-p" mc/unmark-previous-like-this)
-    ("r" mc/mark-all-in-region-regexp :exit t)
-    ("q" nil))
-  (defhydra hydra-origami (:color red)
-    "
+  ("l" mc/edit-lines :exit t)
+  ("a" mc/mark-all-like-this :exit t)
+  ("n" mc/mark-next-like-this)
+  ("N" mc/skip-to-next-like-this)
+  ("M-n" mc/unmark-next-like-this)
+  ("p" mc/mark-previous-like-this)
+  ("P" mc/skip-to-previous-like-this)
+  ("M-p" mc/unmark-previous-like-this)
+  ("r" mc/mark-all-in-region-regexp :exit t)
+  ("q" nil))
+(defhydra hydra-origami (:color red)
+  "
   _o_pen node    _n_ext fold       toggle _f_orward    _t_oggle recursively
   _c_lose node   _p_revious fold   toggle _a_ll
   "
-    ("o" origami-open-node)
-    ("t" origami-recursively-toggle-node)
-    ("c" origami-close-node)
-    ("n" origami-next-fold)
-    ("p" origami-previous-fold)
-    ("f" origami-forward-toggle-node)
-    ("a" origami-toggle-all-nodes))
+  ("o" origami-open-node)
+  ("t" origami-recursively-toggle-node)
+  ("c" origami-close-node)
+  ("n" origami-next-fold)
+  ("p" origami-previous-fold)
+  ("f" origami-forward-toggle-node)
+  ("a" origami-toggle-all-nodes))
 
-  (defhydra hydra-move-previous
-     (:body-pre (previous-line))
-     "move"
-     ("n" next-line)
-     ("p" previous-line)
-     ("<tab>" org-cycle)
-     ("q" nil))
+(defhydra hydra-move-previous
+  (:body-pre (previous-line))
+  "move"
+  ("n" next-line)
+  ("p" previous-line)
+  ("<tab>" org-cycle)
+  ("q" nil))
 
-   (defhydra hydra-move-next
-     (:body-pre (next-line))
-     "move"
-     ("n" next-line)
-     ("p" previous-line)
-     ("<tab>" org-cycle)
-         ("q" nil))
+(defhydra hydra-move-next
+  (:body-pre (next-line))
+  "move"
+  ("n" next-line)
+  ("p" previous-line)
+  ("<tab>" org-cycle)
+  ("q" nil))
 
 ;; Templates of code
 (use-package yasnippet
@@ -643,8 +648,8 @@ This checks in turn:
   (lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
   (lsp-headerline-breadcrumb-mode)
   :hook ((java-mode python-mode go-mode
-          js-mode js2-mode typescript-mode web-mode
-          c-mode c++-mode objc-mode) . lsp))
+		    js-mode js2-mode typescript-mode web-mode
+		    c-mode c++-mode objc-mode) . lsp))
 
 ;; Python support
 (use-package lsp-python-ms
@@ -682,12 +687,12 @@ This checks in turn:
   :commands dap-debug
   :bind
   (:map dap-mode-map
-        (("<f5>" . dap-debug)
-         ("<f8>" . dap-continue)
-         ("<f9>" . dap-next)
-         ("<f11>" . dap-step-in)
-         ("<f10>" . dap-step-out)
-         ("<f2>" . dap-breakpoint-toggle))))
+   (("<f5>" . dap-debug)
+    ("<f8>" . dap-continue)
+    ("<f9>" . dap-next)
+    ("<f11>" . dap-step-in)
+    ("<f10>" . dap-step-out)
+    ("<f2>" . dap-breakpoint-toggle))))
 
 
 ;; Org Stuff
@@ -697,7 +702,7 @@ This checks in turn:
 (use-package org
   ;; :straight (:type built-in)
   :hook ((ediff-prepare-buffer . outline-show-all)
-         ((org-capture-mode org-src-mode) . my/discard-history))
+	 ((org-capture-mode org-src-mode) . my/discard-history))
   :commands (org-capture org-agenda)
   :custom
   (org-ellipsis " ▼")
@@ -707,38 +712,38 @@ This checks in turn:
   (org-journal-file-format "%Y-%m-%d.org")
   (org-hide-emphasis-markers t)
   (org-link-abbrev-alist    ; This overwrites the default Doom org-link-abbrev-list
-       '(("google" . "http://www.google.com/search?q=")
-         ("arch-wiki" . "https://wiki.archlinux.org/index.php/")
-         ("ddg" . "https://duckduckgo.com/?q=")
-         ("wiki" . "https://en.wikipedia.org/wiki/")))
+   '(("google" . "http://www.google.com/search?q=")
+     ("arch-wiki" . "https://wiki.archlinux.org/index.php/")
+     ("ddg" . "https://duckduckgo.com/?q=")
+     ("wiki" . "https://en.wikipedia.org/wiki/")))
   (org-todo-keywords
-     '((sequence
-         "TODO(t)"
-         "BUG(b)"
-         "WAIT(w)"
-         "|"                ; The pipe necessary to separate "active" states and "inactive" states
-         "DONE(d)"
-         "CANCELLED(c)" )))
+   '((sequence
+      "TODO(t)"
+      "BUG(b)"
+      "WAIT(w)"
+      "|"                ; The pipe necessary to separate "active" states and "inactive" states
+      "DONE(d)"
+      "CANCELLED(c)" )))
   (org-hide-leading-stars t)
   (org-directory (let ((dir (file-name-as-directory (expand-file-name "org" user-emacs-directory))))
-                      (make-directory dir :parents)
-                      dir))
+		   (make-directory dir :parents)
+		   dir))
   (org-default-notes-file (expand-file-name "notes.org" org-directory))
   (org-capture-templates
-    `(("t" "Tasks / Projects")
-      ("tt" "Task" entry (file+olp+datetree "tasks.org")
-           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+   `(("t" "Tasks / Projects")
+     ("tt" "Task" entry (file+olp+datetree "tasks.org")
+      "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
 
-      ("j" "Journal Entries")
-      ("jj" "Journal" entry (file+olp+datetree "journal.org")
-           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-           :clock-in :clock-resume
-           :empty-lines 1)
-      ("jm" "Meeting" entry
-           (file+olp+datetree "meetings.org")
-           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-           :clock-in :clock-resume
-           :empty-lines 1)))
+     ("j" "Journal Entries")
+     ("jj" "Journal" entry (file+olp+datetree "journal.org")
+      "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+      :clock-in :clock-resume
+      :empty-lines 1)
+     ("jm" "Meeting" entry
+      (file+olp+datetree "meetings.org")
+      "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+      :clock-in :clock-resume
+      :empty-lines 1)))
   :config
   ;; add plantuml to org sources
   (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
@@ -757,13 +762,13 @@ This checks in turn:
 
   ;; change header size on different levels
   (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
+		  (org-level-2 . 1.1)
+		  (org-level-3 . 1.05)
+		  (org-level-4 . 1.0)
+		  (org-level-5 . 1.1)
+		  (org-level-6 . 1.1)
+		  (org-level-7 . 1.1)
+		  (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil :height (cdr face)))
 
   ;; Save Org buffers after refiling!
@@ -781,16 +786,16 @@ This checks in turn:
     "Invoke `org-babel-tangle-file' asynchronously."
     (message "Tangling %s..." (buffer-file-name))
     (async-start
-    (let ((args (list file)))
-    `(lambda ()
-        (require 'org)
-        (let ((start-time (current-time)))
-          (apply #'org-babel-tangle-file ',args)
-          (format "%.2f" (float-time (time-since start-time))))))
-    (let ((message-string (format "Tangling %S completed after " file)))
-      `(lambda (tangle-time)
-        (message (concat ,message-string
-                         (format "%s seconds" tangle-time)))))))
+     (let ((args (list file)))
+       `(lambda ()
+	  (require 'org)
+	  (let ((start-time (current-time)))
+	    (apply #'org-babel-tangle-file ',args)
+	    (format "%.2f" (float-time (time-since start-time))))))
+     (let ((message-string (format "Tangling %S completed after " file)))
+       `(lambda (tangle-time)
+	  (message (concat ,message-string
+			   (format "%s seconds" tangle-time)))))))
 
   (defun my/org-babel-tangle-current-buffer-async ()
     "Tangle current buffer asynchronously."
@@ -811,7 +816,7 @@ This checks in turn:
   (defun my/org-mode-visual-fill()
     "Set some margins in org documents"
     (setq visual-fill-column-width 100
-        visual-fill-column-center-text t)
+	  visual-fill-column-center-text t)
     (visual-fill-column-mode 1))
   :hook (org-mode . my/org-mode-visual-fill))
 
@@ -845,21 +850,21 @@ This checks in turn:
 	 ("\\.hpp\\'" . c-mode))
   :defines (lsp-clients-clangd-args)
   :config (defun my/cc-mode-setup ()
-            (c-set-offset 'case-label '+)
-            (setq c-basic-offset 4
-                  c-default-style "linux"
-                  indent-tabs-mode t
-                  comment-start "//"
-                  comment-end ""
-                  tab-width 4))
-(with-eval-after-load 'lsp-mode
+	    (c-set-offset 'case-label '+)
+	    (setq c-basic-offset 4
+		  c-default-style "linux"
+		  indent-tabs-mode t
+		  comment-start "//"
+		  comment-end ""
+		  tab-width 4))
+  (with-eval-after-load 'lsp-mode
     (setq lsp-clients-clangd-args
-          '("-j=2"
-            "--background-index"
-            "--clang-tidy"
-            "--completion-style=bundled"
-            "--pch-storage=memory"
-            "--suggest-missing-includes")))
+	  '("-j=2"
+	    "--background-index"
+	    "--clang-tidy"
+	    "--completion-style=bundled"
+	    "--pch-storage=memory"
+	    "--suggest-missing-includes")))
   :hook ((c-mode-common . my/cc-mode-setup)))
 
 ;; Format C code with Clang Format
@@ -867,7 +872,7 @@ This checks in turn:
   :if (executable-find "clang")
   :after cc-mode
   :bind (:map c-mode-base-map
-         ("C-c C-M-f" . clang-format-buffer)))
+	 ("C-c C-M-f" . clang-format-buffer)))
 
 (use-package
   irony
@@ -877,15 +882,15 @@ This checks in turn:
 (use-package rust-mode
   :commands (rust-format-buffer)
   :bind (:map rust-mode-map
-         ("C-c C-M-f" . rust-format-buffer)))
+	 ("C-c C-M-f" . rust-format-buffer)))
 
 ;; Rust - Use racer when RLS in not available (ex. Org mode)
 (use-package racer
   :if (executable-find "racer")
   :hook (racer-mode . eldoc-mode)
   :init (defun org-babel-edit-prep:rust (&optional _babel-info)
-          "Run racer mode for Org Babel."
-          (racer-mode 1)))
+	  "Run racer mode for Org Babel."
+	  (racer-mode 1)))
 
 ;; Rust - Cargo integration
 (use-package cargo
@@ -901,51 +906,51 @@ This checks in turn:
   :straight nil
   :commands (my/emacs-lisp-indent-function)
   :hook ((emacs-lisp-mode . eldoc-mode)
-         (emacs-lisp-mode . (lambda ()
-                              (setq-local lisp-indent-function
-                                          #'my/emacs-lisp-indent-function))))
+	 (emacs-lisp-mode . (lambda ()
+			      (setq-local lisp-indent-function
+					  #'my/emacs-lisp-indent-function))))
   :config
   (defun my/emacs-lisp-indent-function (indent-point state)
     "A replacement for `lisp-indent-function'.
 Indents plists more sensibly. Adapted from DOOM Emacs:
 https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b637998"
     (let ((normal-indent (current-column))
-          (orig-point (point)))
+	  (orig-point (point)))
       (goto-char (1+ (elt state 1)))
       (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
       (cond ((and (elt state 2)
-                  (or (not (looking-at-p "\\sw\\|\\s_"))
-                      (eq (char-after) ?:)))
-             (unless (> (save-excursion (forward-line 1) (point))
-                        calculate-lisp-indent-last-sexp)
-               (goto-char calculate-lisp-indent-last-sexp)
-               (beginning-of-line)
-               (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t))
-             (backward-prefix-chars)
-             (current-column))
-            ((and (save-excursion
-                    (goto-char indent-point)
-                    (skip-syntax-forward " ")
-                    (not (eq (char-after) ?:)))
-                  (save-excursion
-                    (goto-char orig-point)
-                    (eq (char-after) ?:)))
-             (save-excursion
-               (goto-char (+ 2 (elt state 1)))
-               (current-column)))
-            ((let* ((function (buffer-substring (point) (progn (forward-sexp 1) (point))))
-                    (method (or (function-get (intern-soft function) 'lisp-indent-function)
-                                (get (intern-soft function) 'lisp-indent-hook))))
-               (cond ((or (eq method 'defun)
-                          (and (null method)
-                               (> (length function) 3)
-                               (string-match-p "\\`def" function)))
-                      (lisp-indent-defform state indent-point))
-                     ((integerp method)
-                      (lisp-indent-specform method state
-                                            indent-point normal-indent))
-                     (method
-                      (funcall method indent-point state))))))))
+		  (or (not (looking-at-p "\\sw\\|\\s_"))
+		      (eq (char-after) ?:)))
+	     (unless (> (save-excursion (forward-line 1) (point))
+			calculate-lisp-indent-last-sexp)
+	       (goto-char calculate-lisp-indent-last-sexp)
+	       (beginning-of-line)
+	       (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t))
+	     (backward-prefix-chars)
+	     (current-column))
+	    ((and (save-excursion
+		    (goto-char indent-point)
+		    (skip-syntax-forward " ")
+		    (not (eq (char-after) ?:)))
+		  (save-excursion
+		    (goto-char orig-point)
+		    (eq (char-after) ?:)))
+	     (save-excursion
+	       (goto-char (+ 2 (elt state 1)))
+	       (current-column)))
+	    ((let* ((function (buffer-substring (point) (progn (forward-sexp 1) (point))))
+		    (method (or (function-get (intern-soft function) 'lisp-indent-function)
+				(get (intern-soft function) 'lisp-indent-hook))))
+	       (cond ((or (eq method 'defun)
+			  (and (null method)
+			       (> (length function) 3)
+			       (string-match-p "\\`def" function)))
+		      (lisp-indent-defform state indent-point))
+		     ((integerp method)
+		      (lisp-indent-specform method state
+					    indent-point normal-indent))
+		     (method
+		      (funcall method indent-point state))))))))
   (defun org-babel-edit-prep:emacs-lisp (&optional _babel-info)
     "Setup Emacs Lisp buffer for Org Babel."
     (setq lexical-binding t)
@@ -960,7 +965,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (use-package flycheck-yamllint
   :when (executable-find "yamllint")
   :hook ((yaml-mode . flycheck-yamllint-setup)
-         (yaml-mode . flycheck-mode)))
+	 (yaml-mode . flycheck-mode)))
 
 ;; Shell scripting
 (use-package sh-script
@@ -1020,18 +1025,18 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   :commands (elfeed)
   :custom
   (elfeed-feeds '(
-    ;;dev.to
-    "http://dev.to/feed"
+		  ;;dev.to
+		  "http://dev.to/feed"
 
-    ;;reddit
-    "http://reddit.com/r/cpp/.rss"
-    "http://reddit.com/r/emacs/.rss"
-    "http://reddit.com/r/golang/.rss"
-    "http://reddit.com/r/rust/.rss"
-    "http://reddit.com/r/bindingofisaac/.rss"
+		  ;;reddit
+		  "http://reddit.com/r/cpp/.rss"
+		  "http://reddit.com/r/emacs/.rss"
+		  "http://reddit.com/r/golang/.rss"
+		  "http://reddit.com/r/rust/.rss"
+		  "http://reddit.com/r/bindingofisaac/.rss"
 
-    ;;hackernews
-    "https://news.ycombinator.com/rss")))
+		  ;;hackernews
+		  "https://news.ycombinator.com/rss")))
 
 ;; ------------------------------------
 
@@ -1085,76 +1090,76 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     :prefix "SPC")
 
   (my/leader-keys
-  :states 'normal
-  :keymaps 'override
+    :states 'normal
+    :keymaps 'override
 
-  ;; Evilmotion
-  "<SPC>"  '(:ignore t :which-key "Evilmotion")
-  "<SPC>j" '(evilem-motion-next-line :which-key "Sneak down")
-  "<SPC>k" '(evilem-motion-previous-line :which-key "Sneak up")
+    ;; Evilmotion
+    "<SPC>"  '(:ignore t :which-key "Evilmotion")
+    "<SPC>j" '(evilem-motion-next-line :which-key "Sneak down")
+    "<SPC>k" '(evilem-motion-previous-line :which-key "Sneak up")
 
-  ;; Apps
-  "a"  '(:ignore t :which-key "Apps")
-  "gd" '(docker :which-key "Docker")
-  "gc" '(docker-compose :which-key "Docker compose")
-  "gk" '(kubel :which-key "Kubernetes")
-  "an" '(elfeed :which-key "Feeds")
+    ;; Apps
+    "a"  '(:ignore t :which-key "Apps")
+    "gd" '(docker :which-key "Docker")
+    "gc" '(docker-compose :which-key "Docker compose")
+    "gk" '(kubel :which-key "Kubernetes")
+    "an" '(elfeed :which-key "Feeds")
 
-  ;; Buffers & windows
-  "b"  '(:ignore t :which-key "Buffer")
-  "bs" '(switch-to-buffer :which-key "Switch buffer")
-  "bi" '(my/indent-buffer :which-key "Indent buffer")
-  "be" '(ediff-buffers :which-key "Difference")
+    ;; Buffers & windows
+    "b"  '(:ignore t :which-key "Buffer")
+    "bs" '(switch-to-buffer :which-key "Switch buffer")
+    "bi" '(my/indent-buffer :which-key "Indent buffer")
+    "be" '(ediff-buffers :which-key "Difference")
 
-  ;; Files
-  "f"  '(:ignore t :which-key "Files")
-  "fb" '(treemacs :which-key "File browser")
-  "fd" '(dired-jump :which-key "Dired")
-  "ff" '(find-file :which-key "Find file")
-  "fj" '(find-journal :which-key "Journal")
-  "fr" '(consult-recent-file :which-key "Recent files")
+    ;; Files
+    "f"  '(:ignore t :which-key "Files")
+    "fb" '(treemacs :which-key "File browser")
+    "fd" '(dired-jump :which-key "Dired")
+    "ff" '(find-file :which-key "Find file")
+    "fj" '(find-journal :which-key "Journal")
+    "fr" '(consult-recent-file :which-key "Recent files")
 
-  ;; Git
-  "g"  '(:ignore t :which-key "Git")
-  "gs" '(magit-status :which-key "Magit")
-  "gm" '(magit-blame-addition :which-key "Blame")
+    ;; Git
+    "g"  '(:ignore t :which-key "Git")
+    "gs" '(magit-status :which-key "Magit")
+    "gm" '(magit-blame-addition :which-key "Blame")
 
-  ;; Org
-  "o"  '(:ignore t :which-key "Org")
-  "oa" '(org-agenda :which-key "Agenda")
-  "oc" '(org-capture :which-key "Capture")
-  "ot" '(org-todo-list :which-key "Todo")
+    ;; Org
+    "o"  '(:ignore t :which-key "Org")
+    "oa" '(org-agenda :which-key "Agenda")
+    "oc" '(org-capture :which-key "Capture")
+    "ot" '(org-todo-list :which-key "Todo")
 
-  ;; Quiting
-  "q"  '(:ignore t :which-key "Quit")
-  "qq" '(kill-buffer-and-window :which-key "Quit now")
+    ;; Quiting
+    "q"  '(:ignore t :which-key "Quit")
+    "qq" '(kill-buffer-and-window :which-key "Quit now")
 
-  ;; Resize buffers
-  "r"  '(:ignore t :which-key "Resize")
-  "rh" '(hydra-window-resize/my/resize-window-left :which-key "Left")
-  "rj" '(hydra-window-resize/my/resize-window-down :which-key "Down")
-  "rk" '(hydra-window-resize/my/resize-window-up :which-key "Up")
-  "rl" '(hydra-window-resize/my/resize-window-right :which-key "Right")
+    ;; Resize buffers
+    "r"  '(:ignore t :which-key "Resize")
+    "rh" '(hydra-window-resize/my/resize-window-left :which-key "Left")
+    "rj" '(hydra-window-resize/my/resize-window-down :which-key "Down")
+    "rk" '(hydra-window-resize/my/resize-window-up :which-key "Up")
+    "rl" '(hydra-window-resize/my/resize-window-right :which-key "Right")
 
-  ;;engine
-  "s"  '(:ignore t :which-key "Search")
-  "sa" '(engine/search-archwiki :which-key "Archwiki")
-  "sc" '(engine/search-cppreference :which-key "Cpp")
-  "sb" '(engine/search-cmake :which-key "Cmake")
-  "sy" '(engine/search-youtube :which-key "Youtube")
-  "sd" '(engine/search-dockerhub :which-key "Dockerhub")
-  "sr" '(engine/search-rustdoc :which-key "Rustdocs")
-  "sw" '(engine/search-wikipedia :which-key "Wikipedia")
-  "sg" '(engine/search-google :which-key "Google")
-  "sG" '(engine/search-github :which-key "Github")
+    ;;engine
+    "s"  '(:ignore t :which-key "Search")
+    "sa" '(engine/search-archwiki :which-key "Archwiki")
+    "sc" '(engine/search-cppreference :which-key "Cpp")
+    "sb" '(engine/search-cmake :which-key "Cmake")
+    "sy" '(engine/search-youtube :which-key "Youtube")
+    "sd" '(engine/search-dockerhub :which-key "Dockerhub")
+    "sr" '(engine/search-rustdoc :which-key "Rustdocs")
+    "sw" '(engine/search-wikipedia :which-key "Wikipedia")
+    "sg" '(engine/search-google :which-key "Google")
+    "sG" '(engine/search-github :which-key "Github")
 
-  "w"  '(:ignore t :which-key "Windows")
-  "ww" '(tear-off-window :which-key "Tear off")
-  "wh" '(windmove-swap-states-left :which-key "Swap left")
-  "wj" '(windmove-swap-states-down :which-key "Swap down")
-  "wk" '(windmove-swap-states-up :which-key "Swap up")
-  "wl" '(windmove-swap-states-right :which-key "Swap right"))
-)
+    "w"  '(:ignore t :which-key "Windows")
+    "ww" '(tear-off-window :which-key "Tear off")
+    "wh" '(windmove-swap-states-left :which-key "Swap left")
+    "wj" '(windmove-swap-states-down :which-key "Swap down")
+    "wk" '(windmove-swap-states-up :which-key "Swap up")
+    "wl" '(windmove-swap-states-right :which-key "Swap right"))
+  )
 
 ;; Mode Keybindings
 (general-define-key
@@ -1166,25 +1171,24 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; `general-def' can be used instead for `evil-define-key'-like syntax
 (general-def nil global-map
- "C-x C-f" 'find-file
- "C-c C-d" 'racket-run-with-debugging
- "C-c C-M-f" 'my/indent-buffer
- "M-p" 'emmet-expand-yas
- "C-S-c" 'aya-create
- "C-S-e" 'aya-expand
- "C-s" 'save-buffer
- "C-c l" 'org-store-link
- "C-c a" 'org-todo-list
- "C-k" 'kill-buffer-and-window
- "C-c c" 'org-capture
- "C-;" 'shell-pop
- "C-'" 'grugru)
+  "C-c C-d" 'racket-run-with-debugging
+  "C-c C-M-f" 'my/indent-buffer
+  "M-p" 'emmet-expand-yas
+  "C-S-c" 'aya-create
+  "C-S-e" 'aya-expand
+  "C-s" 'save-buffer
+  "C-c l" 'org-store-link
+  "C-c a" 'org-todo-list
+  "C-k" 'kill-buffer-and-window
+  "C-c c" 'org-capture
+  "C-;" 'shell-pop
+  "C-'" 'grugru)
 
 (general-def 'normal prog-mode-map
- "K" 'lsp-describe-thing-at-point)
+  "K" 'lsp-describe-thing-at-point)
 
 (general-def 'normal emacs-lisp-mode-map
- "K" 'describe-thing-at-point)
+  "K" 'describe-thing-at-point)
 
 (general-def nil 'org-mode-map
   "M-H" 'org-shiftleft
@@ -1197,19 +1201,19 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   "M-l" 'org-metaright)
 
 (general-def 'normal 'compilation-mode-map
- "C-n" 'compilation-next-error
- "C-p" 'compilation-previous-error)
+  "C-n" 'compilation-next-error
+  "C-p" 'compilation-previous-error)
 
 (general-def nil 'go-mode-map
- "C-c C-c" 'go-run)
+  "C-c C-c" 'go-run)
 
 (general-def '(normal insert) 'company-mode-map
- "C-SPC" 'company-complete)
+  "C-SPC" 'company-complete)
 
 (general-def 'normal 'global-map
- "Q" 'insert-output-of-executed-line
- "C-/" 'evilnc-comment-or-uncomment-lines
- "gcc" 'evilnc-comment-or-uncomment-lines)
+  "Q" 'insert-output-of-executed-line
+  "C-/" 'evilnc-comment-or-uncomment-lines
+  "gcc" 'evilnc-comment-or-uncomment-lines)
 
 (general-def 'visual 'global-map
   "S" 'evil-surround-region
@@ -1222,10 +1226,10 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (general-define-key "<C-mouse-5>" 'text-scale-decrease)
 
 ;; Move between buffers
-(general-define-key "C-h" 'evil-window-left)
-(general-define-key "C-j" 'evil-window-down)
-(general-define-key "C-k" 'evil-window-up)
-(general-define-key "C-l" 'evil-window-right)
+;; (general-define-key "C-h" 'evil-window-left)
+;; (general-define-key "C-j" 'evil-window-down)
+;; (general-define-key "C-k" 'evil-window-up)
+;; (general-define-key "C-l" 'evil-window-right)
 
 ;; ------------------------------------
 
@@ -1237,7 +1241,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
       (setq server-use-tcp t)))
   :config
   (unless (server-running-p)
-      (server-start)))
+    (server-start)))
 
 (provide 'init)
 ;;; init.el ends here

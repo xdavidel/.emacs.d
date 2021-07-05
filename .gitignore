@@ -8,3 +8,5 @@ tmp/
 server
 transient
 *.cache
+/tramp
+/undo-fu-session/
