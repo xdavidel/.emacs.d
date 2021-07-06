@@ -388,6 +388,8 @@ This checks in turn:
 (use-package consult
   :after vertico
   :hook (completion-setup . hl-line-mode)
+  :config
+  (setq consult-preview-key (kbd "M-."))
   :custom
   (completion-in-region-function #'consult-completion-in-region)
   )
@@ -1171,18 +1173,10 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 ;; `general-def' can be used instead for `evil-define-key'-like syntax
 (general-def nil global-map
-  "C-c C-d" 'racket-run-with-debugging
   "C-c C-M-f" 'my/indent-buffer
-  "M-p" 'emmet-expand-yas
-  "C-S-c" 'aya-create
-  "C-S-e" 'aya-expand
-  "C-s" 'save-buffer
   "C-c l" 'org-store-link
   "C-c a" 'org-todo-list
-  "C-k" 'kill-buffer-and-window
-  "C-c c" 'org-capture
-  "C-;" 'shell-pop
-  "C-'" 'grugru)
+  "C-c c" 'org-capture)
 
 (general-def 'normal prog-mode-map
   "K" 'lsp-describe-thing-at-point)
@@ -1218,6 +1212,9 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 (general-def 'visual 'global-map
   "S" 'evil-surround-region
   "gc" 'evilnc-comment-or-uncomment-lines)
+
+(general-def 'normal 'lsp-mode-map
+  "gr" 'lsp-find-references)
 
 ;; Increase / Decrease font
 (general-define-key "C-=" 'text-scale-increase)
