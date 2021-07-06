@@ -639,7 +639,7 @@ This checks in turn:
   (setq sp-show-pair-from-inside t)
   (setq show-paren-style 'mixed))
 
-;; ;; LSP client
+;; LSP client
 (use-package lsp-mode
   :defer t
   :commands lsp
@@ -683,6 +683,13 @@ This checks in turn:
 ;; Display references of a symbol, or diagnostic
 (use-package lsp-treemacs
   :after lsp)
+
+;; (use-package eglot
+;;   :commands eglot
+;;   :config
+;;   (add-hook 'c-mode-common-hook 'eglot)
+;;   (add-to-list 'eglot-server-programs
+;; 	       '(c-mode . ("clangd"))))
 
 ;; Debugger
 (use-package dap-mode
