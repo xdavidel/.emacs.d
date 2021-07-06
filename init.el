@@ -874,9 +874,9 @@ This checks in turn:
   :bind (:map c-mode-base-map
 	 ("C-c C-M-f" . clang-format-buffer)))
 
-(use-package
-  irony
-  :hook (c-mode . irony-mode))
+;; (use-package
+;;   irony
+;;   :hook (c-mode . irony-mode))
 
 ;; Rust syntax highlighting
 (use-package rust-mode

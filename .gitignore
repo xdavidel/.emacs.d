@@ -10,3 +10,4 @@ transient
 *.cache
 /tramp
 /undo-fu-session/
+/.dap-breakpoints
