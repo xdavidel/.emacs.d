@@ -68,8 +68,11 @@
   ;; Auto refresh changed buffers
   (global-auto-revert-mode t))
 
-;; Set default connection mode to SSH
-(setq tramp-default-method "ssh")
+(use-package tramp
+  :straight nil
+  :config
+  ;; Set default connection mode to SSH
+  (setq tramp-default-method "ssh"))
 
 ;; ------------------------------------
 
