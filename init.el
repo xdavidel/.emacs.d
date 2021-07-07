@@ -767,8 +767,7 @@ This checks in turn:
       (add-to-list 'org-structure-template-alist '("sh"  . "src shell"))
       (add-to-list 'org-structure-template-alist '("el"  . "src emacs-lisp"))
       (add-to-list 'org-structure-template-alist '("py"  . "src python"))
-      (add-to-list 'org-structure-template-alist '("c"   . "src c"))
-      (add-to-list 'org-structure-template-alist '("cpp" . "src c++"))
+      (add-to-list 'org-structure-template-alist '("cpp"   . "src cpp"))
       (add-to-list 'org-structure-template-alist '("go"  . "src go"))
       ))
 
