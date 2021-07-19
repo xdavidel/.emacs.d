@@ -22,7 +22,7 @@
 (defvar my/file-name-handler-alist file-name-handler-alist)
 
 ;; Raising GC threshold to prevent its running
-(setq-default gc-cons-threshold 402653184
+(setq-default gc-cons-threshold most-positive-fixnum
               gc-cons-percentage 0.6
               inhibit-compacting-font-caches t
               message-log-max 16384
