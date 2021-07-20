@@ -121,6 +121,8 @@
 
   ;; Comment code efficiently
   (use-package evil-nerd-commenter
+    :bind (:map global-map
+	   ("C-/" . evilnc-comment-or-uncomment-lines))
     :after evil
     :commands (evilnc-comment-or-uncomment-lines))
 
@@ -404,14 +406,16 @@ This checks in turn:
 (use-package company
   :bind
   (:map company-active-map
-	 ("<down>"   . company-select-next)
-	 ("<up>"   . company-select-previous)
-	 ("TAB" . company-complete-common-or-cycle)
-	 ("<tab>" . company-complete-common-or-cycle)
-	 ("<S-Tab>" . company-select-previous)
-	 ("<backtab>" . company-select-previous)
-	 ("RET"   . company-complete-selection)
-	 ("<ret>" . company-complete-selection))
+   ("<down>" . company-select-next)
+   ("<up>" . company-select-previous)
+   ("TAB" . company-complete-common-or-cycle)
+   ("<tab>" . company-complete-common-or-cycle)
+   ("<S-Tab>" . company-select-previous)
+   ("<backtab>" . company-select-previous)
+   ("RET"   . company-complete-selection)
+   ("<ret>" . company-complete-selection)
+   :map company-mode-map
+   ("C-SPC" . company-complete))
   :hook
   (after-init . global-company-mode)
   :custom
@@ -677,6 +681,21 @@ This checks in turn:
 ;; Org Mode
 (use-package org
   ;; :straight (:type built-in)
+  :bind (:map global-map
+	 ("C-c l" . org-store-link)
+	 ("C-c a" . org-todo-list)
+	 ("C-c c" . org-capture)
+	 :map global-map
+	 ("M-H" . org-shiftleft)
+	 ("M-J" . org-shiftdown)
+	 ("M-K" . org-shiftup)
+	 ("M-L" . org-shiftright)
+	 ("M-h" . org-metaleft)
+	 ("M-j" . org-metadown)
+	 ("M-k" . org-metaup)
+	 ("M-l" . org-metaright)
+	 ("C-c l" . org-store-link)
+	 ("C-c a" . org-todo-list))
   :hook ((ediff-prepare-buffer . outline-show-all)
 	 ((org-capture-mode org-src-mode) . my/discard-history))
   :commands (org-capture org-agenda)
@@ -1144,42 +1163,18 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
  :global-prefix "C-SPC"
  "k" '(eval-buffer :which-key "Eval-buffer"))
 
-;; `general-def' can be used instead for `evil-define-key'-like syntax
-(general-def nil global-map
-  "C-c C-M-f" 'my/indent-buffer
-  "C-c l" 'org-store-link
-  "C-c a" 'org-todo-list
-  "C-c c" 'org-capture)
-
 (general-def 'normal prog-mode-map
   "K" 'lsp-describe-thing-at-point)
 
 (general-def 'normal emacs-lisp-mode-map
   "K" 'describe-thing-at-point)
 
-(general-def nil 'org-mode-map
-  "M-H" 'org-shiftleft
-  "M-J" 'org-shiftdown
-  "M-K" 'org-shiftup
-  "M-L" 'org-shiftright
-  "M-h" 'org-metaleft
-  "M-j" 'org-metadown
-  "M-k" 'org-metaup
-  "M-l" 'org-metaright)
-
 (general-def 'normal 'compilation-mode-map
   "C-n" 'compilation-next-error
   "C-p" 'compilation-previous-error)
 
-(general-def nil 'go-mode-map
-  "C-c C-c" 'go-run)
-
-(general-def '(normal insert) 'company-mode-map
-  "C-SPC" 'company-complete)
-
 (general-def 'normal 'global-map
   "Q" 'insert-output-of-executed-line
-  "C-/" 'evilnc-comment-or-uncomment-lines
   "gcc" 'evilnc-comment-or-uncomment-lines)
 
 (general-def 'visual 'global-map
