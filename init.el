@@ -19,7 +19,8 @@
 (use-package async
   :init
   (dired-async-mode 1)
-  (async-bytecomp-package-mode 1))
+  (async-bytecomp-package-mode 1)
+  :custom (async-bytecomp-allowed-packages '(all)))
 
 ;; Disable bells
 (setq ring-bell-function 'ignore)
