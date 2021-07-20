@@ -412,41 +412,11 @@ This checks in turn:
 	 ("<backtab>" . company-select-previous)
 	 ("RET"   . company-complete-selection)
 	 ("<ret>" . company-complete-selection))
-  :hook (after-init . global-company-mode)
+  :hook
+  (after-init . global-company-mode)
   :custom
-  (company-require-match 'never)
-  (company-minimum-prefix-length 2)
-  (company-tooltip-align-annotations t)
-  (company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-		       company-preview-frontend
-		       company-echo-metadata-frontend))
-  (company-backends '(company-capf company-files))
-  (company-tooltip-minimum-width 30)
-  (company-tooltip-maximum-width 60))
-
-;; Allow submenu for company
-(use-package company-posframe
-  :after company
-  :custom
-  (company-posframe-quickhelp-show-header nil)
-  (company-posframe-show-indicator nil)
-  (company-posframe-show-metadata nil)
-  (company-posframe-quickhelp-delay nil)
-  (company-posframe-quickhelp-show-params
-   (list :poshandler #'company-posframe-quickhelp-right-poshandler
-	 :internal-border-width 1
-	 :timeout 60
-	 :internal-border-color (face-attribute 'mode-line :background)
-	 :no-properties nil))
-  (company-posframe-show-params
-   (list :poshandler #'company-posframe-quickhelp-right-poshandler
-	 :internal-border-width 1
-	 :timeout 60
-	 :internal-border-color (face-attribute 'mode-line :background)
-	 :no-properties nil))
-  :config
-  (company-posframe-mode))
-
+  (company-idle-delay 0.1)
+  (company-minimum-prefix-length 1))
 
 ;; Buitin file manager
 (use-package dired
@@ -589,11 +559,6 @@ This checks in turn:
   ("p" previous-line)
   ("<tab>" org-cycle)
   ("q" nil))
-
-;; Templates of code
-(use-package yasnippet
-  :config
-  (add-to-list 'yas-key-syntaxes 'yas-shortest-key-until-whitespace))
 
 ;; Interface to Git
 (use-package magit
