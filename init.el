@@ -378,7 +378,10 @@ This checks in turn:
 
 ;; Fuzzy search
 (use-package orderless
-  :custom (completion-styles '(orderless)))
+  :custom
+  (completion-styles '(orderless))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles . (partial-completion))))))
 
 ;; Rich completions
 (use-package marginalia
@@ -395,12 +398,12 @@ This checks in turn:
   :config
   (setq consult-preview-key (kbd "M-."))
   :custom
-  (completion-in-region-function #'consult-completion-in-region)
-  )
+  (completion-in-region-function #'consult-completion-in-region))
 
 ;; Completion framwork for anything
 (use-package company
-  :bind (:map company-active-map
+  :bind
+  (:map company-active-map
 	 ("<down>"   . company-select-next)
 	 ("<up>"   . company-select-previous)
 	 ("TAB" . company-complete-common-or-cycle)
