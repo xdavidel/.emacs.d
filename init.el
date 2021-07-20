@@ -613,8 +613,9 @@ This checks in turn:
 
 ;; LSP client
 (use-package lsp-mode
-  :defer t
-  :commands lsp
+  :commands lsp lsp-deferred
+  :bind (:map lsp-mode-map
+	 ("TAB" . completion-at-point))
   :custom
   (lsp-auto-guess-root nil)
   (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
@@ -623,7 +624,7 @@ This checks in turn:
   (lsp-headerline-breadcrumb-mode)
   :hook ((java-mode python-mode go-mode
 		    js-mode js2-mode typescript-mode web-mode
-		    c-mode c++-mode objc-mode) . lsp))
+		    c-mode c++-mode objc-mode) . lsp-deferred))
 
 ;; Python support
 (use-package lsp-python-ms
@@ -634,19 +635,13 @@ This checks in turn:
 ;; Ui for lsp
 (use-package lsp-ui
   :after lsp-mode
-  :diminish
-  :commands lsp-ui-mode
+  :hook (lsp-mode . lsp-ui-mode)
   :custom
-  (lsp-ui-doc-header t)
-  (lsp-ui-doc-include-signature t)
-  (lsp-ui-doc-border (face-foreground 'default))
-  (lsp-ui-sideline-enable nil)
-  (lsp-ui-sideline-ignore-duplicate t)
+  (lsp-ui-doc-enable nil)
+  (lsp-ui-sideline-enable t)
+  (lsp-ui-sideline-show-hover t)
   (lsp-ui-sideline-show-code-actions nil)
   :config
-  ;; Use lsp-ui-doc-webkit only in GUI
-  (if (display-graphic-p)
-      (setq lsp-ui-doc-use-webkit t))
   ;; WORKAROUND Hide mode-line of the lsp-ui-imenu buffer
   ;; https://github.com/emacs-lsp/lsp-ui/issues/243
   (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
