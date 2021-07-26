@@ -596,11 +596,6 @@ This checks in turn:
   (transient-append-suffix 'magit-status-jump '(0 0 -1)
     '("T " "Todos" magit-todos-jump-to-todos)))
 
-;; Use magit with treemacs
-(use-package treemacs-magit
-  :defer t
-  :after (treemacs magit))
-
 ;; Be smart when using parens, and highlight content
 (use-package smartparens
   :hook ((java-mode python-mode go-mode
@@ -650,10 +645,6 @@ This checks in turn:
   ;; https://github.com/emacs-lsp/lsp-ui/issues/243
   (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
     (setq mode-line-format nil)))
-
-;; Display references of a symbol, or diagnostic
-(use-package lsp-treemacs
-  :after lsp)
 
 ;; (use-package eglot
 ;;   :commands eglot
@@ -1012,11 +1003,15 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; Tools
 ;; ------------------------------------
 
-(use-package disk-usage
-  :commands (disk-usage))
-
 ;; Nerdtree like side bar
 (use-package treemacs-evil)
+
+;; Display references of a symbol, or diagnostic
+(use-package lsp-treemacs
+  :after (treemacs lsp))
+
+(use-package disk-usage
+  :commands (disk-usage))
 
 ;; RSS feed
 (use-package elfeed
@@ -1109,6 +1104,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     "bi" '(my/indent-buffer :which-key "Indent buffer")
     "be" '(ediff-buffers :which-key "Difference")
 
+    "e" '(treemacs :which-key "Explorer")
+
     ;; Files
     "f"  '(:ignore t :which-key "Files")
     "fb" '(treemacs :which-key "File browser")
@@ -1139,17 +1136,23 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     "rk" '(hydra-window-resize/my/resize-window-up :which-key "Up")
     "rl" '(hydra-window-resize/my/resize-window-right :which-key "Right")
 
-    ;;engine
+    ;; Search
     "s"  '(:ignore t :which-key "Search")
-    "sa" '(engine/search-archwiki :which-key "Archwiki")
-    "sc" '(engine/search-cppreference :which-key "Cpp")
-    "sb" '(engine/search-cmake :which-key "Cmake")
-    "sy" '(engine/search-youtube :which-key "Youtube")
-    "sd" '(engine/search-dockerhub :which-key "Dockerhub")
-    "sr" '(engine/search-rustdoc :which-key "Rustdocs")
-    "sw" '(engine/search-wikipedia :which-key "Wikipedia")
-    "sg" '(engine/search-google :which-key "Google")
-    "sG" '(engine/search-github :which-key "Github")
+    "si"  '(:ignore t :which-key "Internet")
+    "sia" '(engine/search-archwiki :which-key "Archwiki")
+    "sic" '(engine/search-cppreference :which-key "Cpp")
+    "sib" '(engine/search-cmake :which-key "Cmake")
+    "siy" '(engine/search-youtube :which-key "Youtube")
+    "sid" '(engine/search-dockerhub :which-key "Dockerhub")
+    "sir" '(engine/search-rustdoc :which-key "Rustdocs")
+    "siw" '(engine/search-wikipedia :which-key "Wikipedia")
+    "sig" '(engine/search-google :which-key "Google")
+    "siG" '(engine/search-github :which-key "Github")
+    "sM" '(consult-man :which-key "Manpages")
+    "sc" '(consult-theme :which-key "Colorscheme")
+    "sR" '(consult-register :which-key "Registers")
+    "st" '(consult-grep :which-key "Text")
+
 
     "w"  '(:ignore t :which-key "Windows")
     "ww" '(tear-off-window :which-key "Tear off")
