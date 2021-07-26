@@ -895,6 +895,10 @@ This checks in turn:
 (use-package toml-mode
   :mode ("\\.toml\\'" . toml-mode))
 
+;; Syntax highlighting for vimscript
+(use-package vimrc-mode
+  :mode ("\\.vim\\(rc\\)?\\'" . vimrc-mode))
+
 ;; Lisp and ELisp mode
 (use-package elisp-mode
   :straight nil
