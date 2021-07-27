@@ -1043,6 +1043,27 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   (setq transmission-refresh-modes '(transmission-mode))
   :commands (transmission))
 
+;; Eshell
+
+(setq eshell-highlight-prompt t
+      eshell-history-size         10000
+      eshell-buffer-maximum-lines 10000
+      eshell-hist-ignoredups t)
+
+(use-package eshell-toggle
+  :bind ("C-M-'" . eshell-toggle)
+  :custom
+  (eshell-toggle-size-fraction 3)
+  (eshell-toggle-use-projectile-root t)
+  (eshell-toggle-run-command nil))
+
+(use-package esh-autosuggest
+  :after eshell-toggle
+  :hook eshell) ;company for eshell
+
+
+(global-set-key (kbd "C-`") 'eshell-toggle)
+
 ;; ------------------------------------
 
 
