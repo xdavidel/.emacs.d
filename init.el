@@ -398,7 +398,9 @@ This checks in turn:
   :after vertico
   :hook (completion-setup . hl-line-mode)
   :config
-  (setq consult-preview-key (kbd "M-."))
+  (setq
+   ;; consult-preview-key (kbd "M-.")
+	consult-preview-excluded-hooks '(lsp lsp-deferred))
   :custom
   (completion-in-region-function #'consult-completion-in-region))
 
