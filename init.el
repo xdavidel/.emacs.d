@@ -1033,6 +1033,16 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 		  ;;hackernews
 		  "https://news.ycombinator.com/rss")))
 
+(use-package transmission
+  :bind (:map transmission-mode-map
+	 ("C-c a" . transmission-add)
+	 ("C-c d" . transmission-delete)
+	 ("C-c t" . transmission-toggle)
+	 ("C-c f" . transmission-files))
+  :config
+  (setq transmission-refresh-modes '(transmission-mode))
+  :commands (transmission))
+
 ;; ------------------------------------
 
 
