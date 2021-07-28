@@ -50,9 +50,15 @@
 ;; No line wrap be default
 (setq-default truncate-lines t)
 
-;; Dont use a bar - use Ctrl + mouse-r instead
+;; General Emacs stuff
 (use-package emacs
   :straight nil
+  :bind (:map global-map
+  ;; Increase / Decrease font
+  ("C-=" . text-scale-increase)
+  ("C--" . text-scale-decrease)
+  ("<C-mouse-4>" . text-scale-increase)
+  ("<C-mouse-5>" . text-scale-decrease))
   :config
   (menu-bar-mode -1)
   (blink-cursor-mode -1)
@@ -385,6 +391,12 @@ This checks in turn:
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles . (partial-completion))))))
 
+;; Save history between sessions
+(use-package savehist
+  :after vertico
+  :straight nil
+  :init (savehist-mode))
+
 ;; Rich completions
 (use-package marginalia
   :after vertico
@@ -396,11 +408,18 @@ This checks in turn:
 ;; Menu completion
 (use-package consult
   :after vertico
+  :bind (:map global-map
+    ("C-x b" . consult-buffer)           ; enhanced switch to buffer
+    ("M-s" . consult-outline)            ; navigation by headings
+    ("C-c o" . consult-imenu)            ; navigation by "imenu" items
+    ("M-y" . consult-yank-pop)           ; editing cycle through kill-ring
+    ("C-s" . consult-line))              ; search lines with preview
   :hook (completion-setup . hl-line-mode)
   :config
-  (setq
-   ;; consult-preview-key (kbd "M-.")
-	consult-preview-excluded-hooks '(lsp lsp-deferred))
+  ;; configure preview behavior
+  (consult-customize
+   consult-buffer consult-bookmark :preview-key '(:debounce 1 any)
+   consult-line :preview-key '(:debounce 0 any))
   :custom
   (completion-in-region-function #'consult-completion-in-region))
 
@@ -569,6 +588,8 @@ This checks in turn:
 ;; Interface to Git
 (use-package magit
   :hook ((git-commit-mode . flyspell-mode))
+  :bind (:map global-map
+  ("C-x g" . magit-status))
   :custom
   (magit-ediff-dwim-show-on-hunks t)
   (magit-diff-refine-ignore-whitespace nil)
@@ -622,16 +643,7 @@ This checks in turn:
   (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
   (lsp-keymap-prefix "C-c l")
   (lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  (lsp-headerline-breadcrumb-mode)
-  :hook ((java-mode python-mode go-mode
-		    js-mode js2-mode typescript-mode web-mode
-		    c-mode c++-mode objc-mode) . lsp-deferred))
-
-;; Python support
-(use-package lsp-python-ms
-  :custom
-  (lsp-python-ms-auto-install-server t)
-  :hook (python-mode . lsp-deferred))
+  (lsp-headerline-breadcrumb-mode))
 
 ;; Ui for lsp
 (use-package lsp-ui
@@ -658,6 +670,8 @@ This checks in turn:
 ;; Debugger
 (use-package dap-mode
   :commands dap-debug
+  :init
+  (setq dap-auto-configure-features '(sessions locals controls tooltip))
   :bind
   (:map dap-mode-map
    (("<f5>" . dap-debug)
@@ -1005,6 +1019,8 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 ;; Tools
 ;; ------------------------------------
 
+(use-package restart-emacs)
+
 ;; Nerdtree like side bar
 (use-package treemacs-evil)
 
@@ -1061,7 +1077,6 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
   :after eshell-toggle
   :hook eshell) ;company for eshell
 
-
 (global-set-key (kbd "C-`") 'eshell-toggle)
 
 ;; ------------------------------------
@@ -1102,6 +1117,13 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     "https://doc.rust-lang.org/rustdoc/what-is-rustdoc.html?search=%s")
   (defengine wikipedia
     "https://en.wikipedia.org/wiki/%s"))
+
+;; Tree-sitter support
+(use-package tree-sitter
+  :commands (tree-sitter-mode))
+;; install the tree-sitter grammars
+(use-package tree-sitter-langs
+  :after tree-sitter)
 
 ;; Keybindings
 ;; ------------------------------------
@@ -1145,7 +1167,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
     "fd" '(dired-jump :which-key "Dired")
     "ff" '(find-file :which-key "Find file")
     "fj" '(find-journal :which-key "Journal")
-    "fr" '(consult-recent-file :which-key "Recent files")
+    "fr" '(consult-buffer :which-key "Recent files")
 
     ;; Git
     "g"  '(:ignore t :which-key "Git")
@@ -1201,7 +1223,7 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
  :keymaps 'emacs-lisp-mode-map
  :prefix "SPC"
  :global-prefix "C-SPC"
- "k" '(eval-buffer :which-key "Eval-buffer"))
+ "k" '(eval-buffer :which-key "Eval-buffer")) ;
 
 (general-def 'normal prog-mode-map
   "K" 'lsp-describe-thing-at-point)
@@ -1223,18 +1245,6 @@ https://github.com/hlissner/doom-emacs/commit/a634e2c8125ed692bb76b2105625fe902b
 
 (general-def 'normal 'lsp-mode-map
   "gr" 'lsp-find-references)
-
-;; Increase / Decrease font
-(general-define-key "C-=" 'text-scale-increase)
-(general-define-key "C--" 'text-scale-decrease)
-(general-define-key "<C-mouse-4>" 'text-scale-increase)
-(general-define-key "<C-mouse-5>" 'text-scale-decrease)
-
-;; Move between buffers
-;; (general-define-key "C-h" 'evil-window-left)
-;; (general-define-key "C-j" 'evil-window-down)
-;; (general-define-key "C-k" 'evil-window-up)
-;; (general-define-key "C-l" 'evil-window-right)
 
 ;; ------------------------------------
 
