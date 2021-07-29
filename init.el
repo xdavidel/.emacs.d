@@ -305,10 +305,6 @@ This checks in turn:
   (add-hook 'display-line-numbers-mode-hook
 	    (lambda () (setq display-line-numbers-type 'relative))))
 
-;; Undo/Redo with C-c left/right
-(when (fboundp 'winner-mode)
-  (winner-mode 1))
-
 ;; Don't Lock Files
 (setq-default create-lockfiles nil)
 
