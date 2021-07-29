@@ -22,9 +22,6 @@
   (async-bytecomp-package-mode 1)
   :custom (async-bytecomp-allowed-packages '(all)))
 
-;; Disable bells
-(setq ring-bell-function 'ignore)
-
 ;; Set transparent background
 (defvar my/frame-transparency '(95 . 95))
 (set-frame-parameter (selected-frame) 'alpha my/frame-transparency)
@@ -72,6 +69,8 @@
   (setq scroll-conservatively 101)
   ;; Create a margin for off screen
   (setq scroll-margin 5)
+  ;; Disable bells
+  (setq ring-bell-function 'ignore)
   ;; Auto refresh changed buffers
   (global-auto-revert-mode t))
 
