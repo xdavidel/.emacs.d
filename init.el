@@ -822,6 +822,10 @@ This checks in turn:
   (org-mode . toc-org-mode)
   (markdown-mode . toc-org-mode))
 
+;; Keep text indented with headlines
+(use-package org-indent
+  :straight nil
+  :defer t)
 
 ;; Programming Languages
 ;; ------------------------------------
